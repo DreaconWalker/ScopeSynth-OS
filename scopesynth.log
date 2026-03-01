@@ -1,0 +1,13 @@
+{"timestamp":"2026-03-01T09:59:27.254Z","level":"info","message":"ScopeSynth OS server running","port":3000}
+{"timestamp":"2026-03-01T09:59:34.954Z","level":"info","message":"Compile SOW request received","mode":"manual","lines":2,"baseRate":100,"taxRate":18,"multiplier":1}
+{"timestamp":"2026-03-01T09:59:34.962Z","level":"info","message":"Parser completed","totalHours":15,"grandTotal":1770}
+{"timestamp":"2026-03-01T09:59:34.969Z","level":"info","message":"Manual summary used","chars":30}
+{"timestamp":"2026-03-01T10:06:23.453Z","level":"info","message":"Compile SOW request received","mode":"ai","lines":9,"baseRate":200,"taxRate":18,"multiplier":1}
+{"timestamp":"2026-03-01T10:06:23.463Z","level":"info","message":"Parser completed","totalHours":60,"grandTotal":14160}
+{"timestamp":"2026-03-01T10:06:28.925Z","level":"info","message":"Gemini response received","finishReason":"STOP","hasContext":true}
+{"timestamp":"2026-03-01T10:15:42.947Z","level":"info","message":"Compile SOW request received","mode":"ai","lines":7,"baseRate":100,"taxRate":18,"multiplier":1}
+{"timestamp":"2026-03-01T10:15:42.957Z","level":"info","message":"Parser completed","totalHours":45,"grandTotal":5310}
+{"timestamp":"2026-03-01T10:15:47.717Z","level":"info","message":"Gemini response received","finishReason":"STOP","hasContext":true}
+{"timestamp":"2026-03-01T10:21:57.759Z","level":"info","message":"Compile SOW request received","mode":"ai","lines":8,"baseRate":100,"taxRate":18,"multiplier":1}
+{"timestamp":"2026-03-01T10:21:57.770Z","level":"info","message":"Parser completed","totalHours":55,"grandTotal":6490}
+{"timestamp":"2026-03-01T10:22:03.383Z","level":"info","message":"Gemini response received","finishReason":"STOP","hasContext":true}
