@@ -7,6 +7,7 @@
   <script>
     (function(){var s=localStorage.getItem('scopesynth_theme')||'dark';document.documentElement.classList.toggle('dark',s==='dark');})();
   </script>
+  <script src="/theme-color.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -69,6 +70,17 @@
     .stat-tile .val { font-size: 24px; font-weight: 800; color: #e11d48; }
     .stat-tile .lbl { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-top: 4px; }
     .dark .stat-tile .lbl { color: #94a3b8; }
+
+    :root { --theme-accent: #e11d48; --theme-border: #e11d4866; }
+    [data-theme-accent] .text-brand, [data-theme-accent] span.text-brand { color: var(--theme-accent) !important; }
+    [data-theme-accent] .bg-brand { background-color: var(--theme-accent) !important; }
+    [data-theme-accent] .hover\:bg-brand-dark:hover { background-color: var(--theme-accent) !important; filter: brightness(0.9); }
+    [data-theme-accent] .ring-brand\\/30, [data-theme-accent] .ring-brand\\/40 { --tw-ring-color: var(--theme-accent) !important; }
+    [data-theme-accent] .drawer-panel .nav-link.active { color: var(--theme-accent) !important; }
+    [data-theme-accent] .stat-tile .val { color: var(--theme-accent) !important; }
+    [data-theme-accent] .drop-active { border-color: var(--theme-accent) !important; }
+    [data-theme-accent] input:focus, [data-theme-accent] textarea:focus, [data-theme-accent] select:focus { border-color: var(--theme-accent) !important; outline-color: var(--theme-accent); }
+    [data-theme-accent] .lead-card:hover { box-shadow: 0 0 0 1px var(--theme-border), 0 8px 24px #00000066; }
   </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 min-h-screen font-sans antialiased transition-colors duration-200">
@@ -101,6 +113,7 @@
         </a>
       </div>
       <div class="flex items-center gap-2">
+        <label class="flex items-center" title="Theme color"><input type="color" id="themeColor" value="#e11d48" class="w-8 h-8 rounded-lg border border-slate-300 dark:border-slate-600 cursor-pointer bg-transparent p-0.5"/></label>
         <button type="button" id="themeToggle" aria-label="Toggle theme" class="p-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
           <svg class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
           <svg class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>

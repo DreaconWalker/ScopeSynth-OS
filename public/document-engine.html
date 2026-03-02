@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Document Engine — ScopeSynth OS</title>
 <script>(function(){var s=localStorage.getItem('scopesynth_theme')||'dark';document.documentElement.classList.toggle('dark',s==='dark');})();</script>
+<script src="/theme-color.js"></script>
 <style>
 /* ─── SCREEN STYLES ──────────────────────────────────────────── */
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
@@ -294,6 +295,7 @@ input:checked + .slider:before { transform:translateX(20px); }
   <h1>ScopeSynth <span>OS</span></h1>
   <nav class="nav-links">
     <a href="/dashboard.html" class="nav-back">← Back to CRM Dashboard</a>
+    <label class="flex items-center" title="Theme color"><input type="color" id="themeColor" value="#e11d48" style="width:28px;height:28px;padding:0;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:transparent"/></label>
     <button type="button" id="themeToggle" aria-label="Toggle theme" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px">🌓</button>
     <a href="/lead-intake.html">Lead Intake</a>
     <a href="/margin-audit.html">Margin Audit</a>

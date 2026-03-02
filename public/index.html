@@ -8,6 +8,7 @@
   <script>
     (function(){var s=localStorage.getItem('scopesynth_theme')||'dark';document.documentElement.classList.toggle('dark',s==='dark');})();
   </script>
+  <script src="/theme-color.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -58,6 +59,12 @@
     .dark .hero-glow { background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(225,29,72,.12) 0%, transparent 70%); }
     .grid-overlay { background-image: linear-gradient(rgba(148,163,184,.08) 1px,transparent 1px), linear-gradient(90deg,rgba(148,163,184,.08) 1px,transparent 1px); background-size: 48px 48px; }
     .dark .grid-overlay { background-image: linear-gradient(rgba(148,163,184,.05) 1px,transparent 1px), linear-gradient(90deg,rgba(148,163,184,.05) 1px,transparent 1px); }
+    :root { --theme-accent: #e11d48; --theme-border: #e11d4866; }
+    [data-theme-accent] .text-rose-500, [data-theme-accent] .text-rose-400, [data-theme-accent] .text-rose-600, [data-theme-accent] .text-rose-700 { color: var(--theme-accent) !important; }
+    [data-theme-accent] .bg-rose-600, [data-theme-accent] .bg-rose-500 { background-color: var(--theme-accent) !important; }
+    [data-theme-accent] .border-rose-600, [data-theme-accent] .border-rose-500, [data-theme-accent] .border-rose-400 { border-color: var(--theme-accent) !important; }
+    [data-theme-accent] .hover\:border-rose-500:hover, [data-theme-accent] .hover\:text-rose-400:hover { border-color: var(--theme-accent) !important; color: var(--theme-accent) !important; }
+    [data-theme-accent] .hover\:bg-rose-500:hover { background-color: var(--theme-accent) !important; }
   </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans antialiased overflow-x-hidden transition-colors duration-200">
@@ -83,6 +90,7 @@
 
     <!-- Right actions -->
     <div class="flex items-center gap-3">
+      <label class="flex items-center" title="Theme color"><input type="color" id="themeColor" value="#e11d48" class="w-8 h-8 rounded-lg border border-slate-300 dark:border-slate-600 cursor-pointer bg-transparent p-0.5"/></label>
       <button type="button" id="themeToggle" aria-label="Toggle theme" class="p-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
         <svg class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
         <svg class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>

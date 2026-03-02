@@ -118,3 +118,12 @@
 {"timestamp":"2026-03-02T16:48:50.530Z","level":"info","message":"Lead status updated","id":"3e0f977c-7e93-4971-9073-69973f78be2d","from":"New Lead","to":"Case Study Sent"}
 {"timestamp":"2026-03-02T16:48:50.535Z","level":"info","message":"GET /api/leads","count":3}
 {"timestamp":"2026-03-02T16:49:01.748Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T16:57:21.415Z","level":"info","message":"ScopeSynth OS server running","port":3000}
+{"timestamp":"2026-03-02T16:57:54.609Z","level":"info","message":"GET /api/leads","count":0}
+{"timestamp":"2026-03-02T16:58:04.198Z","level":"info","message":"POST /api/leads/bulk","received":3,"created":3,"skipped":0}
+{"timestamp":"2026-03-02T16:58:04.204Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T16:58:42.279Z","level":"info","message":"AI case study generated","chars":1977}
+{"timestamp":"2026-03-02T16:58:45.045Z","level":"info","message":"Case study saved","id":"CS-1772470725045-bi8jd5","title":"Case Study — Acme Corpsa"}
+{"timestamp":"2026-03-02T16:58:45.150Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T16:59:01.297Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T16:59:08.625Z","level":"info","message":"GET /api/leads","count":3}

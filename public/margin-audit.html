@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Margin Defender AI — ScopeSynth OS</title>
   <script>(function(){var s=localStorage.getItem('scopesynth_theme')||'dark';document.documentElement.classList.toggle('dark',s==='dark');})();</script>
+  <script src="/theme-color.js"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;transition:background .2s,color .2s}
@@ -37,6 +38,14 @@
     .btn-primary{background:#e11d48;color:#fff;border:none;border-radius:10px;padding:13px 28px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px}
     .btn-primary:hover{background:#be123c}
     .btn-primary:disabled{background:#334155;color:#64748b;cursor:not-allowed}
+    :root{--theme-accent:#e11d48;--theme-border:#e11d4866}
+    [data-theme-accent] header .logo{background:var(--theme-accent)}
+    [data-theme-accent] .badge{color:var(--theme-accent);border-color:var(--theme-border)}
+    [data-theme-accent] .btn-primary{background:var(--theme-accent)}
+    [data-theme-accent] .btn-primary:hover{filter:brightness(0.9)}
+    [data-theme-accent] textarea:focus,[data-theme-accent] .api-key-wrap input:focus{border-color:var(--theme-accent)}
+    [data-theme-accent] .export-btn:hover,[data-theme-accent] .btn-secondary:hover{border-color:var(--theme-accent);color:var(--theme-accent)}
+    [data-theme-accent] .agent-action-bar a{background:var(--theme-accent)}
     .btn-secondary{background:transparent;color:#94a3b8;border:1px solid #334155;border-radius:10px;padding:13px 20px;font-size:14px;cursor:pointer}
     .btn-secondary:hover{border-color:#e11d48;color:#e11d48}
     #result{display:none}
@@ -58,6 +67,7 @@
 <header>
   <div class="logo">MD</div>
   <div><h1>Margin Defender AI <span>— ScopeSynth OS</span></h1></div>
+  <label class="flex items-center" title="Theme color"><input type="color" id="themeColor" value="#e11d48" style="width:28px;height:28px;padding:0;border:1px solid #334155;border-radius:6px;cursor:pointer;background:transparent;margin-right:8px"/></label>
   <button type="button" id="themeToggle" aria-label="Toggle theme" style="width:36px;height:36px;border-radius:8px;border:1px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px">🌓</button>
   <div class="badge">🤖 Gemini 2.5 Flash</div>
   <a href="/document-engine.html" class="link-btn">Document Engine</a>
