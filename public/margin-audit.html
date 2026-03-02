@@ -47,7 +47,11 @@
     @keyframes spin{to{transform:rotate(360deg)}}
     .export-btn{background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:8px;padding:10px 18px;font-size:13px;cursor:pointer;margin-left:8px}
     .export-btn:hover{border-color:#e11d48;color:#e11d48}
-    @media print{header,.panel:first-of-type .btn-row,main .panel:first-of-type textarea,.api-key-wrap,.loader{display:none!important} body{background:#fff;color:#000} pre{background:#f8f8f8;color:#000;border:1px solid #ddd}}
+    .agent-action-bar{background:#1e293b;border-top:1px solid #334155;padding:16px 24px;display:flex;justify-content:center;flex-shrink:0}
+    html:not(.dark) .agent-action-bar{background:#fff;border-color:#e2e8f0}
+    .agent-action-bar a{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;background:#e11d48;color:#fff;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;transition:background .2s}
+    .agent-action-bar a:hover{background:#be123c}
+    @media print{header,.panel:first-of-type .btn-row,main .panel:first-of-type textarea,.api-key-wrap,.loader,.agent-action-bar{display:none!important} body{background:#fff;color:#000} pre{background:#f8f8f8;color:#000;border:1px solid #ddd}}
   </style>
 </head>
 <body>
@@ -90,6 +94,10 @@
       <button class="export-btn" onclick="copyReport()">📋 Copy</button>
     </h2>
     <pre id="report-text"></pre>
+  </div>
+
+  <div class="agent-action-bar">
+    <a href="/sow-builder.html">Audit Complete → Proceed to SOW Builder</a>
   </div>
 </main>
 

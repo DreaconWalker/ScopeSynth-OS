@@ -51,8 +51,8 @@
     <div class="max-w-screen-xl mx-auto flex items-center justify-between">
       <div class="flex items-center gap-3">
         <a href="/dashboard.html"
-           class="text-slate-500 dark:text-slate-400 hover:text-rose-500 transition-colors text-sm flex items-center gap-1">
-          ← CRM
+           class="text-slate-500 dark:text-slate-400 hover:text-rose-500 transition-colors text-sm flex items-center gap-1 font-medium">
+          ← Back to CRM Dashboard
         </a>
         <span class="text-slate-400 dark:text-slate-600">|</span>
         <h1 class="text-lg font-bold text-rose-500">Case Study Builder</h1>
@@ -63,13 +63,16 @@
           <svg class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
         </button>
       <button onclick="downloadPDF()"
-              class="flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700
-                     text-white text-sm font-semibold rounded-lg transition-colors shadow">
+              class="flex items-center gap-2 px-4 py-2 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-100 text-sm font-semibold rounded-lg transition-colors">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
         </svg>
         Download PDF
+      </button>
+      <button type="button" id="saveAndGoBtn" onclick="saveAndGoToDashboard()"
+              class="flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold rounded-lg transition-colors shadow">
+        Save &amp; go to Dashboard
       </button>
       </div>
     </div>
@@ -114,7 +117,7 @@
                             text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500 transition-colors" />
               <button onclick="applyLogoUrl()"
                       class="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 border border-slate-300 dark:border-slate-600
-                             rounded-lg text-sm text-slate-200 transition-colors">Apply</button>
+                             rounded-lg text-sm text-slate-800 dark:text-slate-200 transition-colors font-medium">Apply</button>
             </div>
           </div>
           <div class="flex items-center gap-2 text-slate-600">
@@ -215,15 +218,78 @@
     let isAIMode    = false;
     let generatedContent = '';
 
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
       const saved = localStorage.getItem('ss_gemini_key');
       if (saved) document.getElementById('aiKey').value = saved;
       const params = new URLSearchParams(window.location.search);
-      const client = params.get('client');
-      if (client) {
-        document.getElementById('docTitle').value = 'Case Study — ' + decodeURIComponent(client);
+      const loadId = params.get('load');
+      if (loadId) {
+        try {
+          const res = await fetch('/api/case-studies/' + encodeURIComponent(loadId));
+          if (!res.ok) throw new Error('Not found');
+          const doc = await res.json();
+          document.getElementById('docTitle').value = doc.title || '';
+          document.getElementById('docHeader').value = doc.header || '';
+          document.getElementById('docFooter').value = doc.footer || '';
+          document.getElementById('manualContent').value = doc.content || '';
+          generatedContent = doc.content || '';
+          isAIMode = false;
+          document.getElementById('manualSection').classList.remove('hidden');
+          document.getElementById('aiSection').classList.add('hidden');
+          document.getElementById('modeLabel').textContent = 'Manual Entry';
+          const knob = document.getElementById('toggleKnob');
+          const btn  = document.getElementById('modeToggle');
+          if (knob) { knob.style.transform = 'translateX(0)'; knob.classList.remove('bg-rose-400'); knob.classList.add('bg-slate-400'); }
+          if (btn) { btn.classList.remove('bg-rose-900/40'); }
+          syncPreview();
+        } catch (_) {
+          console.warn('Could not load case study', loadId);
+        }
+      } else {
+        const client = params.get('client');
+        const fromLead = params.get('fromLead') === '1';
+        let leadData = null;
+        if (fromLead) {
+          try {
+            const raw = sessionStorage.getItem('scopesynth_lead_from_chat');
+            if (raw) leadData = JSON.parse(raw);
+          } catch (_) {}
+        }
+        if (leadData) {
+          document.getElementById('docTitle').value = (leadData.client ? 'Case Study — ' + leadData.client : 'Case Study');
+          const parts = [];
+          if (leadData.client) parts.push('Lead / Client: ' + leadData.client);
+          if (leadData.email) parts.push('Email: ' + leadData.email);
+          if (leadData.project) parts.push('Project: ' + leadData.project);
+          if (leadData.budget) parts.push('Budget: ' + leadData.budget);
+          if (leadData.timeline) parts.push('Timeline: ' + leadData.timeline);
+          if (leadData.company) parts.push('Company (your org): ' + leadData.company);
+          const contextText = parts.join('\n') + '\n\nUse the above lead details to generate a persuasive case study.';
+          document.getElementById('aiContext').value = contextText;
+          document.getElementById('manualContent').value = 'Lead from conversation:\n\n' + parts.join('\n') + '\n\n[Add or generate case study content here.]';
+          isAIMode = false;
+          document.getElementById('manualSection').classList.remove('hidden');
+          document.getElementById('aiSection').classList.add('hidden');
+          document.getElementById('modeLabel').textContent = 'Manual Entry';
+          const knob = document.getElementById('toggleKnob');
+          const btn = document.getElementById('modeToggle');
+          if (knob) { knob.style.transform = 'translateX(0)'; knob.classList.remove('bg-rose-400'); knob.classList.add('bg-slate-400'); }
+          if (btn) btn.classList.remove('bg-rose-900/40');
+          try { sessionStorage.removeItem('scopesynth_lead_from_chat'); } catch (_) {}
+        } else if (client) {
+          document.getElementById('docTitle').value = 'Case Study — ' + decodeURIComponent(client);
+        }
       }
       syncPreview();
+      // On focus, if empty, put placeholder into value so user can edit instead of retyping
+      document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(el => {
+        el.addEventListener('focus', function() {
+          if (this.value.trim() === '') {
+            this.value = this.placeholder;
+            this.select();
+          }
+        });
+      });
     });
 
     function toggleMode() {
@@ -339,6 +405,28 @@
     function downloadPDF() {
       syncPreview();
       window.print();
+    }
+
+    async function saveAndGoToDashboard() {
+      syncPreview();
+      const title   = document.getElementById('docTitle').value.trim() || 'Case Study';
+      const header  = document.getElementById('docHeader').value.trim();
+      const footer  = document.getElementById('docFooter').value.trim();
+      const content = isAIMode ? generatedContent : (document.getElementById('manualContent').value || '');
+      const params  = new URLSearchParams(window.location.search);
+      const client  = params.get('client') ? decodeURIComponent(params.get('client')) : null;
+      try {
+        const res = await fetch('/api/case-studies', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ title, header, footer, content, clientName: client }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Save failed');
+        window.location.href = '/dashboard.html?caseStudies=1';
+      } catch (e) {
+        alert(e.message || 'Failed to save case study.');
+      }
     }
 
     document.getElementById('themeToggle').addEventListener('click', () => {

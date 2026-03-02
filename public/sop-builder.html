@@ -52,8 +52,8 @@
     <div class="max-w-screen-xl mx-auto flex items-center justify-between">
       <div class="flex items-center gap-3">
         <a href="/dashboard.html"
-           class="text-slate-500 dark:text-slate-400 hover:text-rose-500 transition-colors text-sm flex items-center gap-1">
-          ← CRM
+           class="text-slate-500 dark:text-slate-400 hover:text-rose-500 transition-colors text-sm flex items-center gap-1 font-medium">
+          ← Back to CRM Dashboard
         </a>
         <span class="text-slate-400 dark:text-slate-600">|</span>
         <h1 class="text-lg font-bold text-rose-500">SOP Builder</h1>
@@ -131,8 +131,8 @@
                      class="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm
                             text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500 transition-colors" />
               <button onclick="applyLogoUrl()"
-                      class="px-3 py-2 bg-slate-700 hover:bg-slate-600 border border-slate-600
-                             rounded-lg text-sm text-slate-200 transition-colors">Apply</button>
+                      class="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 border border-slate-300 dark:border-slate-600
+                             rounded-lg text-sm text-slate-800 dark:text-slate-200 transition-colors font-medium">Apply</button>
             </div>
           </div>
           <div class="flex items-center gap-2 text-slate-600">
@@ -267,6 +267,15 @@
         day: '2-digit', month: 'short', year: 'numeric'
       });
       syncPreview();
+      // On focus, if empty, put placeholder into value so user can edit instead of retyping
+      document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(el => {
+        el.addEventListener('focus', function() {
+          if (this.value.trim() === '') {
+            this.value = this.placeholder;
+            this.select();
+          }
+        });
+      });
     });
 
     function toggleMode() {

@@ -77,13 +77,13 @@
     <div class="absolute inset-0" id="drawerBackdrop" aria-label="Close menu"></div>
     <div class="drawer-panel" role="dialog" aria-label="Navigation">
       <div class="drawer-title">Features</div>
+      <a href="/dashboard.html" class="nav-link active">Pipeline Dashboard</a>
+      <a href="/lead-intake.html" class="nav-link">AI Lead Intake</a>
+      <a href="/margin-audit.html" class="nav-link">Margin Defender</a>
+      <a href="/sop-builder.html" class="nav-link">SOP Engine</a>
       <a href="/sow-builder.html" class="nav-link">SOW Builder</a>
-      <a href="/sop-builder.html" class="nav-link">SOP Builder</a>
       <a href="/document-engine.html" class="nav-link">Document Engine</a>
-      <a href="/invoice-dashboard.html" class="nav-link">Invoices</a>
-      <a href="/lead-intake.html" class="nav-link">Lead Intake</a>
-      <a href="/margin-audit.html" class="nav-link">Margin Audit</a>
-      <a href="/dashboard.html" class="nav-link active">CRM</a>
+      <a href="/invoice-dashboard.html" class="nav-link">Invoicing</a>
     </div>
   </div>
 
@@ -125,7 +125,20 @@
         <h1 class="text-2xl font-bold tracking-tight text-slate-800 dark:text-slate-100">Lead Pipeline</h1>
         <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Track prospects from first contact through invoicing.</p>
       </div>
-      <div id="summaryPills" class="flex flex-wrap gap-2 text-xs font-medium"></div>
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="relative" id="caseStudiesWrap">
+          <button type="button" id="caseStudiesTrigger" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-600 dark:text-rose-400 ring-1 ring-rose-500/30 text-sm font-semibold transition-colors">
+            <span>Case studies</span>
+            <span id="caseStudiesCount">0</span>
+          </button>
+          <div id="caseStudiesPanel" class="hidden absolute top-full right-0 mt-2 w-80 max-h-80 overflow-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl z-20">
+            <div class="p-3 border-b border-slate-200 dark:border-slate-700 font-semibold text-slate-800 dark:text-slate-100 text-sm">Saved case studies</div>
+            <div id="caseStudiesList" class="p-2"></div>
+            <p id="caseStudiesEmpty" class="hidden p-4 text-slate-500 dark:text-slate-400 text-sm text-center">No case studies yet. Create one in Case Study Builder.</p>
+          </div>
+        </div>
+        <div id="summaryPills" class="flex flex-wrap gap-2 text-xs font-medium"></div>
+      </div>
     </div>
 
     <div id="dropZone" class="mb-8 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/40 p-8 text-center cursor-pointer hover:border-brand hover:bg-slate-200 dark:hover:bg-slate-800/70 transition-all"
@@ -384,6 +397,10 @@
       ? `<a href="${sopUrl(lead.clientName)}" class="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-xs font-medium transition-colors border border-slate-300 dark:border-slate-600">📋 SOP</a>`
       : '';
 
+    const marginAuditBtn = lead.status === 'New Lead'
+      ? `<a href="/margin-audit.html" class="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium transition-colors">🛡️ Run Margin Audit</a>`
+      : '';
+
     const nextBtn = nx
       ? `<button type="button" onclick="handleAdvance('${lead.id}')" class="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-xs font-medium transition-colors whitespace-nowrap border border-slate-300 dark:border-slate-600">→ ${nx}</button>`
       : '';
@@ -399,7 +416,7 @@
         </div>
         <p class="text-xs text-slate-500 truncate">${escHtml(lead.email)}</p>
         <span class="self-start inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${m.bg} ring-1 ${m.ring} ${m.color}"><span class="w-1.5 h-1.5 rounded-full ${m.dot}"></span>${lead.status}</span>
-        <div class="flex gap-2 pt-1 flex-wrap">${docBtn}${sopBtn}${nextBtn}</div>
+        <div class="flex gap-2 pt-1 flex-wrap">${docBtn}${sopBtn}${marginAuditBtn}${nextBtn}</div>
       </div>`;
   }
 
@@ -528,6 +545,33 @@
     }
   }
 
+  async function loadCaseStudies() {
+    try {
+      const res = await fetch('/api/case-studies');
+      const list = await res.json();
+      const countEl = document.getElementById('caseStudiesCount');
+      const listEl = document.getElementById('caseStudiesList');
+      const emptyEl = document.getElementById('caseStudiesEmpty');
+      if (countEl) countEl.textContent = list.length;
+      if (list.length === 0) {
+        if (listEl) listEl.innerHTML = '';
+        if (emptyEl) emptyEl.classList.remove('hidden');
+      } else {
+        if (emptyEl) emptyEl.classList.add('hidden');
+        if (listEl) {
+          listEl.innerHTML = list.map(cs => {
+            const date = cs.createdAt ? new Date(cs.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+            const title = escHtml((cs.title || 'Case Study').slice(0, 50)) + (cs.title && cs.title.length > 50 ? '…' : '');
+            return `<div class="flex items-center justify-between gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50"><div class="min-w-0"><div class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">${title}</div><div class="text-xs text-slate-500 dark:text-slate-400">${date}</div></div><a href="/case-study.html?load=${encodeURIComponent(cs.id)}" class="shrink-0 px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold" target="_self">Download</a></div>`;
+          }).join('');
+        }
+      }
+    } catch (_) {
+      const countEl = document.getElementById('caseStudiesCount');
+      if (countEl) countEl.textContent = '0';
+    }
+  }
+
   async function loadAndRender() {
     try {
       const leads = await fetchLeads();
@@ -535,6 +579,7 @@
       renderBoard(leads);
       renderProgressTable(leads);
       renderSlidableAnalytics(leads);
+      await loadCaseStudies();
     } catch (e) {
       showToast('Could not load leads from server.', 'error');
     }
@@ -592,6 +637,21 @@
       });
     });
   });
+
+  const caseStudiesTrigger = document.getElementById('caseStudiesTrigger');
+  const caseStudiesPanel = document.getElementById('caseStudiesPanel');
+  if (caseStudiesTrigger && caseStudiesPanel) {
+    caseStudiesTrigger.addEventListener('click', function (e) {
+      e.stopPropagation();
+      caseStudiesPanel.classList.toggle('hidden');
+    });
+    document.addEventListener('click', function () {
+      caseStudiesPanel.classList.add('hidden');
+    });
+    caseStudiesPanel.addEventListener('click', function (e) {
+      e.stopPropagation();
+    });
+  }
 
   let _modalLeads = [];
   let _modalFilters = new Set();
@@ -680,7 +740,15 @@
   drawerBackdrop.addEventListener('click', closeDrawer);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
 
-  loadAndRender();
+  loadAndRender().then(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('caseStudies') === '1') {
+      const panel = document.getElementById('caseStudiesPanel');
+      const wrap = document.getElementById('caseStudiesWrap');
+      if (panel) panel.classList.remove('hidden');
+      if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  });
   </script>
 </body>
 </html>

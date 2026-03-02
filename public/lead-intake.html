@@ -7,7 +7,7 @@
   <script>(function(){var s=localStorage.getItem('scopesynth_theme')||'dark';document.documentElement.classList.toggle('dark',s==='dark');})();</script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;height:100vh;display:flex;flex-direction:column;transition:background .2s,color .2s}
+    body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;padding-bottom:60px;transition:background .2s,color .2s}
     html:not(.dark) body{background:#f8fafc;color:#0f172a}
     html:not(.dark) header{background:#fff;border-color:#e2e8f0}
     html:not(.dark) .header-text h1{color:#0f172a}
@@ -73,6 +73,10 @@
     #send-btn{background:#e11d48;color:#fff;border:none;border-radius:10px;padding:11px 22px;font-size:14px;font-weight:600;cursor:pointer}
     #send-btn:hover{background:#be123c}
     #send-btn:disabled{background:#334155;color:#64748b;cursor:not-allowed}
+    .agent-action-bar{position:fixed;bottom:0;left:0;right:0;z-index:100;background:#1e293b;border-top:1px solid #334155;padding:12px 22px;display:flex;justify-content:center;flex-shrink:0}
+    html:not(.dark) .agent-action-bar{background:#fff;border-color:#e2e8f0}
+    .agent-action-bar a{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:#e11d48;color:#fff;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;transition:background .2s}
+    .agent-action-bar a:hover{background:#be123c}
   </style>
 </head>
 <body>
@@ -126,6 +130,10 @@
 <div class="chat-footer">
   <input id="msg-input" type="text" placeholder="Type your message…" autocomplete="off" disabled/>
   <button id="send-btn" disabled>Send</button>
+</div>
+
+<div class="agent-action-bar">
+  <a href="/dashboard.html">Lead Captured → Return to CRM</a>
 </div>
 
 <script>
@@ -212,6 +220,7 @@ function showDoneActions(leadData, companyName) {
     <div class="done-title">✅ Lead captured for ${companyLabel}!</div>
     ${summary.length ? '<div class="done-summary">' + summary.map(s => '<span>' + s + '</span>').join('') + '</div>' : ''}
     <div class="done-actions">
+      <button type="button" class="btn-crm" data-action="open-form">Open in Case Study Builder with lead content</button>
       <button type="button" class="btn-crm" data-action="add-crm">Add to CRM &amp; go to Dashboard</button>
       <a href="/case-study.html?client=${enc}" class="btn-link">Send Case Study</a>
       <a href="/sow-builder.html?client=${enc}" class="btn-link">Build SOW</a>
@@ -221,6 +230,22 @@ function showDoneActions(leadData, companyName) {
   `;
   chat.appendChild(banner);
   chat.scrollTop = chat.scrollHeight;
+
+  banner.querySelector('[data-action="open-form"]').addEventListener('click', () => {
+    try {
+      sessionStorage.setItem('scopesynth_lead_from_chat', JSON.stringify({
+        client: label,
+        email: (leadData.email || '').trim(),
+        project: (leadData.project_type || '').trim(),
+        budget: (leadData.budget || '').trim(),
+        timeline: (leadData.timeline || '').trim(),
+        company: (companyName || company) || ''
+      }));
+      window.location.href = '/case-study.html?fromLead=1';
+    } catch (e) {
+      window.location.href = '/case-study.html?client=' + enc;
+    }
+  });
 
   banner.querySelector('[data-action="add-crm"]').addEventListener('click', async () => {
     const clientName = label;

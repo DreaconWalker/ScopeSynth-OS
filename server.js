@@ -474,6 +474,37 @@ app.post('/api/margin-audit', async (req, res) => {
   }
 });
 
+// ─── Case Studies Store (for Case Study Builder & Dashboard) ───────────────────
+const caseStudiesDB = []; // { id, title, header, footer, content, clientName?, createdAt }
+
+app.post('/api/case-studies', (req, res) => {
+  const body = req.body;
+  const id = 'CS-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+  const doc = {
+    id,
+    title: body.title || 'Case Study',
+    header: body.header || '',
+    footer: body.footer || '',
+    content: body.content || '',
+    clientName: body.clientName || null,
+    createdAt: new Date().toISOString(),
+  };
+  caseStudiesDB.push(doc);
+  writeLog('info', 'Case study saved', { id, title: doc.title });
+  return res.status(201).json({ id, message: 'Saved.', doc });
+});
+
+app.get('/api/case-studies', (req, res) => {
+  const list = [...caseStudiesDB].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  return res.json(list);
+});
+
+app.get('/api/case-studies/:id', (req, res) => {
+  const doc = caseStudiesDB.find(d => d.id === req.params.id);
+  if (!doc) return res.status(404).json({ error: 'Case study not found.' });
+  return res.json(doc);
+});
+
 // ─── Invoices / Documents Store (for Document Engine & Invoice Dashboard) ──────
 const invoicesDB = []; // { id, type, docNumber, clientName, grandTotal, status, createdAt, ... }
 
