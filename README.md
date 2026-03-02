@@ -34,9 +34,14 @@ Unlike bloated Enterprise SaaS pricing around **$50 per month per user**, ScopeS
 
 ---
 
-## Quick Start
+## How to Run This Project
+
+**Full step-by-step guide:** see **[docs/SETUP.md](docs/SETUP.md)** for prerequisites, install, run, port options, and troubleshooting.
+
+**Quick run (if Node.js 18+ is already installed):**
 
 ```bash
+# From the project root (where package.json lives)
 npm install
 npm start
 ```
@@ -49,9 +54,15 @@ Then open **http://localhost:3000** in your browser. The app is served from the 
 
 | Path | Description |
 |------|-------------|
-| **`server.js`** | Express server: `/api/compile-sow` (parse markdown + optional Gemini summary), static files from `public/`, logs in `logs/` |
+| **`server.js`** | Express server: `/api/compile-sow`, **leads API** (`GET/POST /api/leads`, `PUT /api/leads/:id/status`), static files from `public/`, logs in `logs/` |
 | **`parser.js`** | SOW Logic Engine: markdown → AST, hours by depth, configurable base rate / tax / multiplier |
-| **`public/index.html`** | Pitch Architect UI: scope builder, document settings, compile, PDF-ready template |
+| **`public/index.html`** | SOW Builder UI: scope builder, document settings, compile, PDF export |
+| **`public/dashboard.html`** | **CRM Dashboard** — Kanban lead pipeline, CSV bulk upload, stage progression, links to SOW/Invoice/SOP/Document Engine/Invoices |
+| **`public/lead-intake.html`** | **Lead Intake AI Agent** — BYOK Gemini SDR chat; qualifies leads (project, budget, email) and generates lead summary |
+| **`public/margin-audit.html`** | **Margin Defender AI** — Paste scope/SOW; BYOK Gemini returns a risk audit report (margin bleed, protective clauses) |
+| **`public/document-engine.html`** | **Document Engine** — SOW / Tax Invoice builder with deterministic AST-style math (base rate, multiplier, GST); Save to Invoices |
+| **`public/invoice-dashboard.html`** | **Invoice Dashboard** — Analytics (Total Initiated, Total Received); list of saved invoices with Mark Received and Print PDF |
+| **`docs/SETUP.md`** | **Detailed setup & run guide** — prerequisites, install, run, port, troubleshooting |
 | **`logs/`** | Created on first run; `scopesynth.log` for request/error logs |
 
 ---
@@ -70,3 +81,29 @@ Then open **http://localhost:3000** in your browser. The app is served from the 
 3. **Executive summary** — Manual (type your own) or AI (Gemini 2.5 Flash; needs API key).
 4. **Scope builder** — Pick phase + feature or type custom; add items. Scope is markdown bullets (`- Phase` / `  - Feature`).
 5. **Compile SOW** — Deterministic line-item math + optional AI summary; view results and **Download SOW as PDF** (browser print dialog).
+
+---
+
+## CRM Dashboard
+
+Open **http://localhost:3000/dashboard.html** (or click **CRM** in the SOW Builder header) for the Kanban lead pipeline:
+
+- **Bulk upload** — CSV with columns *Client Name*, *Project Type*, *Email* (file input or drag-and-drop); header normalisation and RFC 4180 quoted fields supported.
+- **Four stages** — New Lead → Case Study Sent → SOW Approved → Invoiced; per-stage colours (sky/amber/emerald/violet) and card counts.
+- **Doc actions** — New Lead: *Draft Case Study* → SOW Builder with `?type=casestudy&client=…`; Case Study Sent: *Build SOW* → `?client=…`; SOW Approved: *Generate Invoice* → `?type=invoice&client=…`; Invoiced: ✅ badge only.
+- **→ Next Stage** — Calls `PUT /api/leads/:id/status` with `{ advance: true }` and re-renders; toasts for success/error.
+- **Export to Excel** — Downloads the current lead pipeline as a CSV file (Excel-compatible): ID, Client Name, Project Type, Email, Status, Created At, Updated At. RFC 4180 quoted fields; filename `scopesynth-leads-YYYY-MM-DD.csv`.
+
+---
+
+## Lead Intake Agent & Margin Defender
+
+- **Lead Intake** (`/lead-intake.html`) — Configure company, sector, and SDR name; chat with a Gemini-powered SDR to capture project type, budget, timeline, and email. BYOK API key. Sessions stored in-memory on the server.
+- **Margin Defender** (`/margin-audit.html`) — Paste draft scope or SOW; get a structured risk audit (score, warnings, protective clauses). BYOK API key. Uses `POST /api/margin-audit`.
+
+---
+
+## Document Engine & Invoice Dashboard
+
+- **Document Engine** (`/document-engine.html`) — Toggle between **Statement of Work** and **Tax Invoice**. Sidebar: client details, document #, dates, base rate, team multiplier, GST toggle, payment terms. Line items table with add/delete; **deterministic math** (subtotal → multiplier → GST → grand total). **Save to Database** posts to `POST /api/invoices`; **Export PDF** uses browser print.
+- **Invoice Dashboard** (`/invoice-dashboard.html`) — **Analytics**: Total Initiated (all saved invoices), Total Received (invoices marked received). Table: Doc #, Client, Project, Amount, Status, **Mark Received** (PUT `/api/invoices/:id/status`), **Print PDF** (opens Document Engine with client pre-filled for re-export).

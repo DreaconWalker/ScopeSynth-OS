@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Document Engine — ScopeSynth OS</title>
+<script>(function(){var s=localStorage.getItem('scopesynth_theme')||'dark';document.documentElement.classList.toggle('dark',s==='dark');})();</script>
+<style>
+/* ─── SCREEN STYLES ──────────────────────────────────────────── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg:       #0f172a;
+  --surface:  #1e293b;
+  --border:   #334155;
+  --text:     #e2e8f0;
+  --muted:    #94a3b8;
+  --dim:      #475569;
+  --accent:   #e11d48;
+  --accent-h: #be123c;
+  --green:    #16a34a;
+  --radius:   12px;
+}
+html:not(.dark) {
+  --bg:       #f8fafc;
+  --surface:  #fff;
+  --border:   #e2e8f0;
+  --text:     #0f172a;
+  --muted:    #64748b;
+  --dim:      #94a3b8;
+}
+
+body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; min-height:100vh; transition:background .2s, color .2s; }
+
+/* Header */
+.app-header {
+  background:var(--surface); border-bottom:1px solid var(--border);
+  padding:14px 28px; display:flex; align-items:center; gap:14px;
+  position:sticky; top:0; z-index:100;
+}
+.logo { width:38px; height:38px; background:var(--accent); border-radius:9px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; color:#fff; flex-shrink:0; }
+.app-header h1 { font-size:17px; font-weight:700; color:#f1f5f9; }
+.app-header h1 span { font-size:12px; color:var(--muted); font-weight:400; margin-left:6px; }
+.badge { background:#e11d4818; color:var(--accent); border:1px solid #e11d4830; padding:3px 11px; border-radius:20px; font-size:11px; font-weight:600; }
+.header-actions { margin-left:auto; display:flex; gap:10px; align-items:center; }
+
+/* Nav links */
+.nav-links { display:flex; align-items:center; gap:16px; margin-right:16px; }
+.nav-links a { font-size:13px; color:var(--muted); text-decoration:none; transition:color .2s; }
+.nav-links a:hover { color:var(--text); }
+
+/* Mode Toggle */
+.mode-toggle {
+  display:flex; background:var(--bg); border:1px solid var(--border);
+  border-radius:10px; overflow:hidden; padding:4px; gap:4px;
+}
+.mode-btn {
+  padding:8px 20px; border:none; border-radius:7px; font-size:13px; font-weight:600;
+  cursor:pointer; transition:all .2s; color:var(--muted); background:transparent;
+}
+.mode-btn.active { background:var(--accent); color:#fff; }
+
+/* Layout */
+.workspace { display:grid; grid-template-columns:340px 1fr; gap:0; min-height:calc(100vh - 65px); }
+
+/* Sidebar */
+.sidebar { background:var(--surface); border-right:1px solid var(--border); padding:24px 20px; overflow-y:auto; display:flex; flex-direction:column; gap:20px; }
+.sidebar-section { display:flex; flex-direction:column; gap:10px; }
+.section-title { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+
+label { font-size:12px; color:var(--muted); display:block; margin-bottom:4px; font-weight:500; }
+input[type="text"], input[type="number"], select, textarea {
+  width:100%; background:var(--bg); border:1px solid var(--border);
+  border-radius:8px; padding:9px 12px; color:var(--text); font-size:13px;
+  outline:none; transition:border .2s; font-family:inherit;
+}
+input:focus, select:focus, textarea:focus { border-color:var(--accent); }
+input::placeholder, textarea::placeholder { color:var(--dim); }
+select option { background:var(--surface); }
+textarea { resize:vertical; min-height:70px; line-height:1.5; }
+.sidebar-hint { font-size:11px; color:var(--dim); margin-top:2px; margin-bottom:8px; line-height:1.4; }
+.logo-file-input { position:absolute; width:0; height:0; opacity:0; }
+.logo-upload-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.logo-upload-btn { padding:8px 14px; border:1px dashed var(--border); border-radius:8px; font-size:12px; color:var(--muted); cursor:pointer; transition:all .2s; }
+.logo-upload-btn:hover { border-color:var(--accent); color:var(--accent); }
+.logo-clear-btn { padding:6px 12px; border:1px solid var(--border); border-radius:6px; font-size:11px; color:var(--muted); background:transparent; cursor:pointer; transition:all .2s; }
+.logo-clear-btn:hover { border-color:#e11d48; color:#e11d48; }
+.logo-preview-wrap { margin-top:10px; padding:10px; background:var(--bg); border:1px solid var(--border); border-radius:8px; }
+.logo-preview-label { font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--dim); display:block; margin-bottom:6px; }
+.logo-preview-img { max-height:40px; max-width:140px; object-fit:contain; display:block; }
+.color-row { display:flex; align-items:center; gap:10px; margin-top:4px; }
+.color-row input[type="color"] { width:40px; height:36px; padding:2px; border:1px solid var(--border); border-radius:8px; cursor:pointer; background:var(--bg); }
+.color-row .color-hex { flex:1; min-width:0; font-family:monospace; font-size:12px; }
+
+/* Toggle Switch */
+.toggle-row { display:flex; align-items:center; justify-content:space-between; }
+.toggle-label { font-size:13px; color:var(--text); font-weight:500; }
+.toggle-sub { font-size:11px; color:var(--muted); margin-top:2px; }
+.switch { position:relative; width:44px; height:24px; flex-shrink:0; }
+.switch input { opacity:0; width:0; height:0; }
+.slider { position:absolute; inset:0; background:var(--border); border-radius:24px; cursor:pointer; transition:.3s; }
+.slider:before { content:''; position:absolute; width:18px; height:18px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.3s; }
+input:checked + .slider { background:var(--accent); }
+input:checked + .slider:before { transform:translateX(20px); }
+
+/* Main Canvas */
+.canvas { padding:28px 32px; overflow-y:auto; }
+
+/* Document Preview — uses --doc-text, --doc-border, --doc-accent for preview & print */
+.doc-card {
+  --doc-text: #111111;
+  --doc-muted: #555555;
+  --doc-border: #dddddd;
+  --doc-accent: #e11d48;
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; transition:--doc-text .15s, --doc-border .15s, --doc-accent .15s;
+}
+.doc-header-bar {
+  background:linear-gradient(135deg, #1a0a11 0%, #1e293b 100%);
+  border-bottom:2px solid var(--doc-border); padding:28px 32px;
+  display:flex; justify-content:space-between; align-items:flex-start;
+}
+.doc-branding { display:flex; flex-direction:column; gap:4px; position:relative; }
+.doc-branding .company-logo-img { max-height:52px; max-width:200px; width:auto; object-fit:contain; object-position:left center; display:block; }
+.doc-branding .company-name { font-size:22px; font-weight:800; color:#f1f5f9; letter-spacing:-.3px; }
+.doc-branding .company-sub { font-size:12px; color:var(--muted); margin-top:3px; }
+.doc-branding .company-text-wrap { display:flex; flex-direction:column; }
+/* Header image upload zone (invoice / document header) */
+.header-img-zone { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.header-img-zone .upload-box { width:180px; min-height:48px; border:2px dashed var(--border); border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .2s; color:var(--muted); font-size:12px; text-align:center; padding:10px; }
+.header-img-zone .upload-box:hover { border-color:var(--accent); color:var(--accent); }
+.header-img-zone .upload-box input { position:absolute; width:0; height:0; opacity:0; }
+.header-img-zone .header-logo-wrap { position:relative; display:inline-flex; align-items:center; gap:8px; }
+.header-img-zone .header-logo-wrap img { max-height:48px; max-width:180px; object-fit:contain; display:block; }
+.header-img-zone .header-change-btn { font-size:11px; color:var(--muted); cursor:pointer; text-decoration:underline; white-space:nowrap; }
+.header-img-zone .header-change-btn:hover { color:var(--accent); }
+.hide-file-input { position:absolute; width:0; height:0; opacity:0; pointer-events:none; }
+.no-print { }
+.doc-type-label { font-size:28px; font-weight:800; color:var(--doc-accent); text-align:right; line-height:1; }
+.doc-number { font-size:12px; color:var(--muted); text-align:right; margin-top:5px; }
+
+.doc-meta { padding:20px 32px; display:grid; grid-template-columns:1fr 1fr; gap:16px; border-bottom:1px solid var(--doc-border); }
+.meta-box { }
+.meta-box .meta-label { font-size:10px; text-transform:uppercase; letter-spacing:.7px; color:var(--doc-muted); font-weight:700; margin-bottom:5px; }
+.meta-box .meta-value { font-size:14px; color:var(--doc-text); font-weight:600; min-height:20px; }
+.meta-box .meta-sub { font-size:12px; color:var(--doc-muted); margin-top:2px; }
+
+/* Line Items Table */
+.line-items-section { padding:24px 32px; }
+.section-heading { font-size:13px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.7px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; }
+.add-row-btn { background:transparent; border:1px solid var(--border); color:var(--muted); padding:5px 14px; border-radius:7px; font-size:12px; cursor:pointer; transition:all .2s; display:flex; align-items:center; gap:5px; }
+.add-row-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+.items-table { width:100%; border-collapse:collapse; }
+.items-table th { font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--doc-muted); font-weight:700; padding:8px 10px; border-bottom:1px solid var(--doc-border); text-align:left; }
+.items-table th:last-child { text-align:right; }
+.items-table td { padding:8px 10px; border-bottom:1px solid var(--doc-border); vertical-align:middle; }
+.items-table tr:last-child td { border-bottom:none; }
+.items-table tr:hover td { background:#ffffff06; }
+
+/* Inline inputs in table */
+.tbl-input {
+  background:transparent; border:1px solid transparent; border-radius:6px;
+  padding:6px 8px; color:var(--doc-text); font-size:13px; outline:none; width:100%;
+  transition:all .2s; font-family:inherit;
+}
+.tbl-input:focus { background:var(--bg); border-color:var(--accent); }
+.tbl-input.desc { min-width:160px; }
+.tbl-input.rate { max-width:100px; text-align:right; }
+
+/* Unit controls */
+.unit-ctrl { display:flex; align-items:center; gap:6px; }
+.unit-btn { width:26px; height:26px; border:1px solid var(--border); background:var(--bg); color:var(--text); border-radius:6px; cursor:pointer; font-size:15px; display:flex; align-items:center; justify-content:center; transition:all .18s; font-weight:700; flex-shrink:0; line-height:1; padding:0; }
+.unit-btn:hover { border-color:var(--accent); color:var(--accent); background:#e11d4810; }
+.unit-display { min-width:28px; text-align:center; font-size:13px; font-weight:600; color:var(--doc-text); }
+.row-total { font-size:13px; font-weight:700; color:var(--doc-text); text-align:right; white-space:nowrap; }
+.delete-btn { background:transparent; border:none; color:var(--dim); cursor:pointer; padding:4px 8px; border-radius:5px; font-size:16px; transition:all .2s; }
+.delete-btn:hover { color:#e11d48; background:#e11d4815; }
+
+/* Totals Panel */
+.totals-panel { padding:20px 32px 28px; border-top:1px solid var(--doc-border); display:flex; justify-content:flex-end; }
+.totals-box { min-width:320px; display:flex; flex-direction:column; gap:10px; }
+.total-row { display:flex; justify-content:space-between; align-items:center; }
+.total-row .t-label { font-size:13px; color:var(--doc-muted); }
+.total-row .t-val { font-size:14px; font-weight:600; color:var(--doc-text); }
+.total-row.subtotal .t-val { color:var(--doc-text); }
+.total-row.multiplier-row .t-val { color:#a78bfa; }
+.total-row.gst-row .t-val { color:#fbbf24; }
+.divider-line { border:none; border-top:1px solid var(--doc-border); margin:4px 0; }
+.grand-row { display:flex; justify-content:space-between; align-items:center; background:rgba(225,29,72,.08); border:1px solid var(--doc-accent); border-radius:9px; padding:12px 16px; margin-top:4px; }
+.grand-row .g-label { font-size:15px; font-weight:800; color:var(--doc-text); }
+.grand-row .g-val { font-size:22px; font-weight:800; color:var(--doc-accent); }
+
+/* Terms (SOW mode) */
+.terms-section { padding:0 32px 24px; }
+.terms-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--doc-muted); margin-bottom:8px; }
+.terms-text { font-size:12px; color:var(--doc-muted); line-height:1.7; }
+
+/* Action Bar */
+.action-bar { padding:20px 32px; border-top:1px solid var(--border); background:#ffffff04; display:flex; gap:12px; flex-wrap:wrap; }
+.btn { padding:11px 22px; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; border:none; display:flex; align-items:center; gap:7px; }
+.btn-primary { background:var(--accent); color:#fff; }
+.btn-primary:hover { background:var(--accent-h); }
+.btn-outline { background:transparent; border:1px solid var(--border); color:var(--muted); }
+.btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+.btn-success { background:#16a34a20; color:#86efac; border:1px solid #16a34a40; }
+.btn-success:hover { background:#16a34a35; }
+.save-status { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:6px; margin-left:auto; align-self:center; }
+.save-status.ok { color:#86efac; }
+.save-status.err { color:#fca5a5; }
+
+/* ─── PRINT / PDF STYLES ─────────────────────────────────────── */
+@media print {
+  * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+
+  body { background:#fff !important; color:#111 !important; font-family:'Segoe UI',sans-serif; margin:0; }
+
+  .app-header, .sidebar, .mode-toggle, .action-bar,
+  .add-row-btn, .unit-btn, .delete-btn, .save-status,
+  .section-heading button, .nav-links, .no-print { display:none !important; }
+
+  .workspace { display:block !important; }
+  .canvas { padding:0 !important; }
+  .doc-card { border:none !important; border-radius:0 !important; box-shadow:none !important; }
+
+  .doc-header-bar {
+    background:#fff !important;
+    border-bottom:2px solid var(--doc-border) !important;
+    padding:24px 32px !important;
+  }
+  .doc-branding .company-name { color:var(--doc-text) !important; font-size:20px !important; }
+  .doc-branding .company-sub { color:var(--doc-muted) !important; }
+  .doc-type-label { color:var(--doc-accent) !important; }
+  .doc-number { color:var(--doc-muted) !important; }
+
+  .doc-meta { border-bottom:1px solid var(--doc-border) !important; }
+  .meta-box .meta-label { color:var(--doc-muted) !important; }
+  .meta-box .meta-value { color:var(--doc-text) !important; }
+  .meta-box .meta-sub { color:var(--doc-muted) !important; }
+
+  .items-table th { color:var(--doc-muted) !important; border-bottom:1px solid var(--doc-border) !important; }
+  .items-table td { border-bottom:1px solid var(--doc-border) !important; }
+  .row-total { color:var(--doc-text) !important; }
+  .tbl-input { color:var(--doc-text) !important; background:transparent !important; border-color:transparent !important; }
+  .unit-display { color:var(--doc-text) !important; }
+
+  .total-row .t-label { color:var(--doc-muted) !important; }
+  .total-row .t-val { color:var(--doc-text) !important; }
+  .total-row.multiplier-row .t-val { color:#6d28d9 !important; }
+  .total-row.gst-row .t-val { color:#b45309 !important; }
+  .divider-line { border-top:1px solid var(--doc-border) !important; }
+
+  .grand-row { background:rgba(225,29,72,.06) !important; border:2px solid var(--doc-accent) !important; border-radius:8px !important; }
+  .grand-row .g-label { color:var(--doc-text) !important; }
+  .grand-row .g-val { color:var(--doc-accent) !important; }
+
+  .terms-label { color:var(--doc-muted) !important; }
+  .terms-text { color:var(--doc-text) !important; }
+  .totals-panel { padding-bottom:80px !important; }
+
+  .print-footer {
+    display:block !important;
+    position:fixed; bottom:0; left:0; right:0;
+    border-top:1px solid var(--doc-border);
+    padding:10px 32px;
+    background:#fff;
+    text-align:center;
+    font-size:11px;
+    color:var(--doc-muted);
+  }
+
+  @page { margin:15mm 15mm 25mm; size:A4; }
+}
+
+/* Hide print footer on screen */
+.print-footer { display:none; }
+
+/* Notification toast */
+.toast { position:fixed; bottom:28px; right:28px; background:#1e293b; border:1px solid var(--border); border-radius:10px; padding:14px 20px; font-size:13px; color:var(--text); display:flex; align-items:center; gap:10px; z-index:9999; opacity:0; transform:translateY(16px); transition:all .3s; pointer-events:none; }
+.toast.show { opacity:1; transform:translateY(0); }
+.toast.success { border-color:#16a34a50; background:#0f2e1a; color:#86efac; }
+.toast.error { border-color:#e11d4850; background:#1a0a11; color:#fca5a5; }
+</style>
+</head>
+<body>
+
+<!-- ─── Header ─────────────────────────────────────────────── -->
+<header class="app-header">
+  <a href="/" class="logo">S</a>
+  <h1>ScopeSynth <span>OS</span></h1>
+  <nav class="nav-links">
+    <button type="button" id="themeToggle" aria-label="Toggle theme" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px">🌓</button>
+    <a href="/lead-intake.html">Lead Intake</a>
+    <a href="/margin-audit.html">Margin Audit</a>
+    <a href="/invoice-dashboard.html">Invoice Dashboard</a>
+    <a href="/dashboard.html">CRM</a>
+  </nav>
+  <div class="badge">Document Engine</div>
+  <div class="header-actions">
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="btn-sow" onclick="setMode('sow')">📄 Statement of Work</button>
+      <button class="mode-btn" id="btn-inv" onclick="setMode('invoice')">🧾 Tax Invoice</button>
+    </div>
+  </div>
+</header>
+
+<!-- ─── Workspace ──────────────────────────────────────────── -->
+<div class="workspace">
+
+  <!-- Sidebar: Configuration -->
+  <aside class="sidebar">
+
+    <!-- Client & Document Info -->
+    <div class="sidebar-section">
+      <div class="section-title">Client Details</div>
+      <div>
+        <label>Client / Company Name</label>
+        <input type="text" id="client-name" placeholder="Acme Corp" oninput="renderDoc()"/>
+      </div>
+      <div>
+        <label>Client Email</label>
+        <input type="text" id="client-email" placeholder="client@company.com" oninput="renderDoc()"/>
+      </div>
+      <div>
+        <label>Project Title</label>
+        <input type="text" id="project-title" placeholder="Enterprise AI Dashboard" oninput="renderDoc()"/>
+      </div>
+      <div id="sow-scope-wrap">
+        <label>Scope Summary</label>
+        <textarea id="scope-summary" rows="3" placeholder="Brief description of deliverables..." oninput="renderDoc()"></textarea>
+      </div>
+    </div>
+
+    <!-- Company Branding / Logo -->
+    <div class="sidebar-section">
+      <div class="section-title">Company Branding</div>
+      <div>
+        <label>Company logo (optional)</label>
+        <p class="sidebar-hint">If no logo is uploaded, "ScopeSynth OS" is shown on the document.</p>
+        <div class="logo-upload-row">
+          <input type="file" id="company-logo-file" accept="image/*" class="logo-file-input" onchange="handleLogoUpload(event)"/>
+          <label for="company-logo-file" class="logo-upload-btn">Choose image…</label>
+          <button type="button" id="company-logo-clear" class="logo-clear-btn" onclick="clearCompanyLogo()" style="display:none">Remove logo</button>
+        </div>
+        <div id="company-logo-preview-wrap" class="logo-preview-wrap" style="display:none">
+          <span class="logo-preview-label">Preview:</span>
+          <img id="company-logo-preview" src="" alt="Logo preview" class="logo-preview-img"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Document Info -->
+    <div class="sidebar-section">
+      <div class="section-title">Document Info</div>
+      <div>
+        <label>Document / Invoice No.</label>
+        <input type="text" id="doc-number" oninput="renderDoc()"/>
+      </div>
+      <div>
+        <label>Issue Date</label>
+        <input type="text" id="issue-date" oninput="renderDoc()"/>
+      </div>
+      <div id="due-date-wrap">
+        <label>Due / Delivery Date</label>
+        <input type="text" id="due-date" oninput="renderDoc()"/>
+      </div>
+    </div>
+
+    <!-- Financial Settings -->
+    <div class="sidebar-section">
+      <div class="section-title">Financial Settings</div>
+      <div>
+        <label>Base Rate per Unit (₹)</label>
+        <input type="number" id="base-rate" value="25000" min="0" oninput="recalc()"/>
+      </div>
+      <div>
+        <label>Team Allocation Multiplier</label>
+        <select id="multiplier" onchange="recalc()">
+          <option value="1.0">Standard — 1.0×</option>
+          <option value="1.5">Senior — 1.5×</option>
+          <option value="2.0">Expert — 2.0×</option>
+        </select>
+      </div>
+      <div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">GST @ 18%</div>
+            <div class="toggle-sub">Applies on adjusted subtotal</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="gst-toggle" onchange="recalc()"/>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Terms (SOW only) -->
+    <div class="sidebar-section" id="terms-wrap">
+      <div class="section-title">Payment Terms</div>
+      <div>
+        <label>Terms</label>
+        <textarea id="payment-terms" rows="4" oninput="renderDoc()" placeholder="50% advance on signing. 50% on delivery. Payment via bank transfer within 7 days of invoice."></textarea>
+      </div>
+    </div>
+
+    <!-- Document colors (preview & print) -->
+    <div class="sidebar-section">
+      <div class="section-title">Document colors</div>
+      <p class="sidebar-hint">Applied to preview and to PDF when you print.</p>
+      <div>
+        <label>Text color</label>
+        <div class="color-row">
+          <input type="color" id="doc-color-text" value="#111111" title="Text color" aria-label="Text color"/>
+          <input type="text" id="doc-color-text-hex" value="#111111" maxlength="7" class="color-hex" placeholder="#111111"/>
+        </div>
+      </div>
+      <div>
+        <label>Borders &amp; lines</label>
+        <div class="color-row">
+          <input type="color" id="doc-color-border" value="#dddddd" title="Border color" aria-label="Border color"/>
+          <input type="text" id="doc-color-border-hex" value="#dddddd" maxlength="7" class="color-hex" placeholder="#dddddd"/>
+        </div>
+      </div>
+      <div>
+        <label>Accent (heading, grand total)</label>
+        <div class="color-row">
+          <input type="color" id="doc-color-accent" value="#e11d48" title="Accent color" aria-label="Accent color"/>
+          <input type="text" id="doc-color-accent-hex" value="#e11d48" maxlength="7" class="color-hex" placeholder="#e11d48"/>
+        </div>
+      </div>
+      <button type="button" id="doc-colors-reset" class="logo-clear-btn mt-1">Reset to default</button>
+    </div>
+
+  </aside>
+
+  <!-- Canvas: Document Preview -->
+  <main class="canvas">
+    <div class="doc-card">
+
+      <!-- Document Header -->
+      <div class="doc-header-bar">
+        <div class="doc-branding">
+          <div class="header-img-zone">
+            <label class="upload-box no-print" id="header-upload-box">
+              <input type="file" id="header-logo-file" accept="image/*" onchange="handleHeaderLogoUpload(event)"/>
+              Upload header image
+            </label>
+            <div class="header-logo-wrap" id="header-logo-wrap" style="display:none">
+              <img id="doc-branding-logo" class="company-logo-img" src="" alt="Company logo"/>
+              <label class="header-change-btn no-print" for="header-logo-file-2">Change</label>
+              <input type="file" id="header-logo-file-2" accept="image/*" class="hide-file-input" onchange="handleHeaderLogoUpload(event)"/>
+            </div>
+          </div>
+          <div class="company-text-wrap" id="doc-branding-text">
+            <div class="company-name">ScopeSynth OS</div>
+            <div class="company-sub">AI &amp; Software Agency</div>
+          </div>
+        </div>
+        <div>
+          <div class="doc-type-label" id="doc-type-label">STATEMENT OF WORK</div>
+          <div class="doc-number" id="doc-number-display"></div>
+          <div class="doc-number" id="doc-date-display"></div>
+        </div>
+      </div>
+
+      <!-- Meta -->
+      <div class="doc-meta">
+        <div class="meta-box">
+          <div class="meta-label">Prepared For</div>
+          <div class="meta-value" id="meta-client">—</div>
+          <div class="meta-sub" id="meta-email"></div>
+        </div>
+        <div class="meta-box">
+          <div class="meta-label">Project</div>
+          <div class="meta-value" id="meta-project">—</div>
+          <div class="meta-sub" id="meta-due"></div>
+        </div>
+        <div class="meta-box" id="meta-scope-box">
+          <div class="meta-label">Scope</div>
+          <div class="meta-value" id="meta-scope" style="font-size:13px;font-weight:400;line-height:1.6"></div>
+        </div>
+      </div>
+
+      <!-- Line Items -->
+      <div class="line-items-section">
+        <div class="section-heading">
+          Line Items
+          <button class="add-row-btn" onclick="addRow()">＋ Add Row</button>
+        </div>
+        <table class="items-table" id="items-table">
+          <thead>
+            <tr>
+              <th style="width:36%">Description</th>
+              <th style="width:18%">Unit Rate (₹)</th>
+              <th style="width:16%">Units</th>
+              <th style="width:18%;text-align:right">Row Total</th>
+              <th style="width:6%"></th>
+            </tr>
+          </thead>
+          <tbody id="items-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Totals -->
+      <div class="totals-panel">
+        <div class="totals-box">
+          <div class="total-row subtotal">
+            <span class="t-label">Subtotal</span>
+            <span class="t-val" id="t-subtotal">₹0</span>
+          </div>
+          <div class="total-row multiplier-row" id="multiplier-row">
+            <span class="t-label" id="mult-label">Team Allocation (1.0×)</span>
+            <span class="t-val" id="t-adjusted">₹0</span>
+          </div>
+          <hr class="divider-line"/>
+          <div class="total-row gst-row" id="gst-row" style="display:none">
+            <span class="t-label">GST @ 18%</span>
+            <span class="t-val" id="t-gst">₹0</span>
+          </div>
+          <div class="grand-row">
+            <span class="g-label">GRAND TOTAL</span>
+            <span class="g-val" id="t-grand">₹0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Terms (SOW) -->
+      <div class="terms-section" id="doc-terms-section">
+        <div class="terms-label">Payment Terms &amp; Conditions</div>
+        <div class="terms-text" id="doc-terms-text"></div>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="action-bar">
+        <button class="btn btn-primary" onclick="window.print()">🖨️ Export PDF</button>
+        <button class="btn btn-success" onclick="saveToDatabase()">💾 Save to Database</button>
+        <button class="btn btn-outline" onclick="resetDoc()">↺ Reset</button>
+        <span class="save-status" id="save-status"></span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Print Footer (visible only in PDF) -->
+<div class="print-footer">
+  ScopeSynth OS &nbsp;|&nbsp; © 2026
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ─── AST-Based Calculation Engine ──────────────────────── -->
+<script>
+/* ──────────────────────────────────────────────────────────────
+   DETERMINISTIC AST MATH ENGINE
+   No AI involved. Pure token-based evaluation for safe pricing.
+   ────────────────────────────────────────────────────────────── */
+const MathAST = (() => {
+  function tokenize(expr) {
+    const tokens = [];
+    let i = 0;
+    while (i < expr.length) {
+      if (/\s/.test(expr[i])) { i++; continue; }
+      if (/\d/.test(expr[i]) || (expr[i] === '.' && /\d/.test(expr[i+1]))) {
+        let num = '';
+        while (i < expr.length && /[\d.]/.test(expr[i])) num += expr[i++];
+        tokens.push({ type: 'NUM', val: parseFloat(num) });
+      } else if ('+-*/()'.includes(expr[i])) {
+        tokens.push({ type: 'OP', val: expr[i++] });
+      } else { i++; }
+    }
+    return tokens;
+  }
+  function parse(tokens) {
+    let pos = 0;
+    function peek() { return tokens[pos] || null; }
+    function consume() { return tokens[pos++]; }
+    function parseExpr(minPrec = 0) {
+      let left = parsePrimary();
+      while (true) {
+        const op = peek();
+        if (!op || op.type !== 'OP') break;
+        const prec = { '+': 1, '-': 1, '*': 2, '/': 2 }[op.val];
+        if (prec === undefined || prec <= minPrec) break;
+        consume();
+        const right = parseExpr(prec);
+        left = { type: 'BIN', op: op.val, left, right };
+      }
+      return left;
+    }
+    function parsePrimary() {
+      const tok = peek();
+      if (!tok) return { type: 'NUM', val: 0 };
+      if (tok.type === 'NUM') { consume(); return { type: 'NUM', val: tok.val }; }
+      if (tok.val === '(') { consume(); const node = parseExpr(); consume(); return node; }
+      if (tok.val === '-') { consume(); return { type: 'UNE', op: '-', expr: parsePrimary() }; }
+      return { type: 'NUM', val: 0 };
+    }
+    return parseExpr();
+  }
+  function evaluate(node) {
+    if (node.type === 'NUM') return node.val;
+    if (node.type === 'UNE') return -evaluate(node.expr);
+    if (node.type === 'BIN') {
+      const l = evaluate(node.left), r = evaluate(node.right);
+      switch (node.op) {
+        case '+': return l + r;
+        case '-': return l - r;
+        case '*': return l * r;
+        case '/': return r !== 0 ? l / r : 0;
+      }
+    }
+    return 0;
+  }
+  return {
+    calc: (expr) => {
+      try { return evaluate(parse(tokenize(String(expr)))); }
+      catch { return 0; }
+    }
+  };
+})();
+
+/* ──────────────────────────────────────────────────────────────
+   STATE
+   ────────────────────────────────────────────────────────────── */
+let mode = 'sow'; // 'sow' | 'invoice'
+let rowId = 0;
+const rows = []; // { id, desc, rate, units }
+let companyLogoDataUrl = null; // data URL for uploaded company logo
+
+/* ──────────────────────────────────────────────────────────────
+   INIT
+   ────────────────────────────────────────────────────────────── */
+function init() {
+  const params = new URLSearchParams(window.location.search);
+  const clientParam = params.get('client') || params.get('Client');
+  if (clientParam) document.getElementById('client-name').value = decodeURIComponent(clientParam);
+
+  const today = new Date();
+  const fmt = d => d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+  const due = new Date(today); due.setDate(due.getDate() + 30);
+  document.getElementById('doc-number').value = 'DOC-' + Date.now().toString().slice(-6);
+  document.getElementById('issue-date').value = fmt(today);
+  document.getElementById('due-date').value = fmt(due);
+  document.getElementById('payment-terms').value = '50% advance on signing. Balance 50% due upon delivery.\nPayment via bank transfer within 7 days of final invoice.';
+
+  addRow('UI/UX Design & Prototyping', 25000, 2);
+  addRow('Backend API Development', 25000, 4);
+  addRow('AI Agent Integration', 25000, 3);
+
+  renderDoc();
+  recalc();
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-sow').classList.toggle('active', m === 'sow');
+  document.getElementById('btn-inv').classList.toggle('active', m === 'invoice');
+  document.getElementById('sow-scope-wrap').style.display = m === 'sow' ? '' : 'none';
+  document.getElementById('terms-wrap').style.display = m === 'sow' ? '' : 'none';
+  document.getElementById('doc-terms-section').style.display = m === 'sow' ? '' : 'none';
+  document.getElementById('meta-scope-box').style.display = m === 'sow' ? '' : 'none';
+  document.getElementById('due-date-wrap').querySelector('label').textContent =
+    m === 'sow' ? 'Due / Delivery Date' : 'Payment Due Date';
+  renderDoc();
+}
+
+function renderDoc() {
+  const v = id => document.getElementById(id)?.value || '';
+  document.getElementById('doc-type-label').textContent = mode === 'sow' ? 'STATEMENT OF WORK' : 'TAX INVOICE';
+  document.getElementById('doc-number-display').textContent = `#${v('doc-number')}`;
+  document.getElementById('doc-date-display').textContent = `Issued: ${v('issue-date')}`;
+  document.getElementById('meta-client').textContent = v('client-name') || '—';
+  document.getElementById('meta-email').textContent = v('client-email');
+  document.getElementById('meta-project').textContent = v('project-title') || '—';
+  document.getElementById('meta-due').textContent = v('due-date') ? `Due: ${v('due-date')}` : '';
+  document.getElementById('meta-scope').textContent = v('scope-summary');
+  document.getElementById('doc-terms-text').textContent = v('payment-terms');
+
+  const logoEl = document.getElementById('doc-branding-logo');
+  const textWrap = document.getElementById('doc-branding-text');
+  const headerUploadBox = document.getElementById('header-upload-box');
+  const headerLogoWrap = document.getElementById('header-logo-wrap');
+  if (companyLogoDataUrl) {
+    if (logoEl) { logoEl.src = companyLogoDataUrl; logoEl.style.display = 'block'; }
+    if (headerUploadBox) headerUploadBox.style.display = 'none';
+    if (headerLogoWrap) headerLogoWrap.style.display = 'flex';
+    if (textWrap) textWrap.style.display = 'none';
+  } else {
+    if (logoEl) { logoEl.style.display = 'none'; logoEl.removeAttribute('src'); }
+    if (headerUploadBox) headerUploadBox.style.display = 'flex';
+    if (headerLogoWrap) headerLogoWrap.style.display = 'none';
+    if (textWrap) textWrap.style.display = '';
+  }
+}
+
+function handleHeaderLogoUpload(ev) {
+  const file = ev.target?.files?.[0];
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = function() {
+    companyLogoDataUrl = reader.result;
+    const preview = document.getElementById('company-logo-preview');
+    const wrap = document.getElementById('company-logo-preview-wrap');
+    const clearBtn = document.getElementById('company-logo-clear');
+    if (preview) preview.src = companyLogoDataUrl;
+    if (wrap) wrap.style.display = '';
+    if (clearBtn) clearBtn.style.display = 'inline-block';
+    const sidebarInput = document.getElementById('company-logo-file');
+    if (sidebarInput) sidebarInput.value = '';
+    renderDoc();
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleLogoUpload(ev) {
+  const file = ev.target?.files?.[0];
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = function() {
+    companyLogoDataUrl = reader.result;
+    const preview = document.getElementById('company-logo-preview');
+    const wrap = document.getElementById('company-logo-preview-wrap');
+    const clearBtn = document.getElementById('company-logo-clear');
+    if (preview) { preview.src = companyLogoDataUrl; }
+    if (wrap) wrap.style.display = '';
+    if (clearBtn) clearBtn.style.display = 'inline-block';
+    renderDoc();
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearCompanyLogo() {
+  companyLogoDataUrl = null;
+  const input = document.getElementById('company-logo-file');
+  const preview = document.getElementById('company-logo-preview');
+  const wrap = document.getElementById('company-logo-preview-wrap');
+  const clearBtn = document.getElementById('company-logo-clear');
+  const headerFile1 = document.getElementById('header-logo-file');
+  const headerFile2 = document.getElementById('header-logo-file-2');
+  if (input) input.value = '';
+  if (headerFile1) headerFile1.value = '';
+  if (headerFile2) headerFile2.value = '';
+  if (preview) preview.removeAttribute('src');
+  if (wrap) wrap.style.display = 'none';
+  if (clearBtn) clearBtn.style.display = 'none';
+  renderDoc();
+}
+
+function addRow(desc = '', rate = null, units = 1) {
+  const baseRate = parseFloat(document.getElementById('base-rate').value) || 25000;
+  const id = ++rowId;
+  rows.push({ id, desc, rate: rate !== null ? rate : baseRate, units });
+  renderTable();
+  recalc();
+}
+
+function deleteRow(id) {
+  const idx = rows.findIndex(r => r.id === id);
+  if (idx > -1) rows.splice(idx, 1);
+  renderTable();
+  recalc();
+}
+
+function updateRow(id, field, val) {
+  const row = rows.find(r => r.id === id);
+  if (!row) return;
+  row[field] = field === 'desc' ? val : (parseFloat(val) || 0);
+  recalc();
+}
+
+function changeUnits(id, delta) {
+  const row = rows.find(r => r.id === id);
+  if (!row) return;
+  row.units = Math.max(1, row.units + delta);
+  const el = document.getElementById(`units-${id}`);
+  if (el) el.textContent = row.units;
+  recalc();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('items-body');
+  tbody.innerHTML = '';
+  rows.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input class="tbl-input desc" type="text" value="${escHtml(row.desc)}"
+          onchange="updateRow(${row.id},'desc',this.value)" placeholder="Service / Deliverable"/></td>
+      <td><input class="tbl-input rate" type="number" value="${row.rate}" min="0"
+          onchange="updateRow(${row.id},'rate',this.value)" oninput="updateRow(${row.id},'rate',this.value)"/></td>
+      <td>
+        <div class="unit-ctrl">
+          <button class="unit-btn" onclick="changeUnits(${row.id},-1)">−</button>
+          <span class="unit-display" id="units-${row.id}">${row.units}</span>
+          <button class="unit-btn" onclick="changeUnits(${row.id},+1)">+</button>
+        </div>
+      </td>
+      <td class="row-total" id="row-total-${row.id}">${fmt(row.rate * row.units)}</td>
+      <td><button class="delete-btn" onclick="deleteRow(${row.id})" title="Remove row">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function recalc() {
+  const multiplier = parseFloat(document.getElementById('multiplier').value) || 1.0;
+  const gstEnabled = document.getElementById('gst-toggle').checked;
+
+  let subtotal = 0;
+  rows.forEach(row => {
+    const rowTotal = MathAST.calc(`${row.rate} * ${row.units}`);
+    subtotal = MathAST.calc(`${subtotal} + ${rowTotal}`);
+    const el = document.getElementById(`row-total-${row.id}`);
+    if (el) el.textContent = fmt(rowTotal);
+  });
+
+  const adjusted = MathAST.calc(`${subtotal} * ${multiplier}`);
+  const gstAmt = gstEnabled ? MathAST.calc(`${adjusted} * 0.18`) : 0;
+  const grand = MathAST.calc(`${adjusted} + ${gstAmt}`);
+
+  document.getElementById('t-subtotal').textContent = fmt(subtotal);
+  document.getElementById('t-adjusted').textContent = fmt(adjusted);
+  document.getElementById('t-gst').textContent = fmt(gstAmt);
+  document.getElementById('t-grand').textContent = fmt(grand);
+
+  const multLabel = document.getElementById('mult-label');
+  multLabel.textContent = `Team Allocation (${multiplier}×)`;
+
+  document.getElementById('gst-row').style.display = gstEnabled ? '' : 'none';
+  document.getElementById('multiplier-row').style.display = multiplier !== 1.0 ? '' : 'flex';
+}
+
+async function saveToDatabase() {
+  const v = id => document.getElementById(id)?.value || '';
+  const multiplier = parseFloat(document.getElementById('multiplier').value) || 1.0;
+  const gstEnabled = document.getElementById('gst-toggle').checked;
+
+  let subtotal = 0;
+  rows.forEach(r => { subtotal = MathAST.calc(`${subtotal} + ${r.rate} * ${r.units}`); });
+  const adjusted = MathAST.calc(`${subtotal} * ${multiplier}`);
+  const gstAmount = gstEnabled ? MathAST.calc(`${adjusted} * 0.18`) : 0;
+  const grandTotal = MathAST.calc(`${adjusted} + ${gstAmount}`);
+
+  const payload = {
+    type: mode,
+    docNumber: v('doc-number'),
+    issueDate: v('issue-date'),
+    dueDate: v('due-date'),
+    clientName: v('client-name'),
+    clientEmail: v('client-email'),
+    projectTitle: v('project-title'),
+    lineItems: rows.map(r => ({
+      description: r.desc,
+      rate: r.rate,
+      units: r.units,
+      total: MathAST.calc(`${r.rate} * ${r.units}`)
+    })),
+    subtotal: Math.round(adjusted * 100) / 100,
+    tax: Math.round(gstAmount * 100) / 100,
+    grandTotal: Math.round(grandTotal * 100) / 100,
+    status: 'initiated'
+  };
+
+  try {
+    const statusEl = document.getElementById('save-status');
+    statusEl.textContent = '⏳ Saving…';
+    statusEl.className = 'save-status';
+
+    const res = await fetch('/api/invoices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await res.text());
+
+    statusEl.textContent = '✅ Saved to database';
+    statusEl.className = 'save-status ok';
+    toast('Document saved successfully!', 'success');
+    var dashboardLink = document.createElement('a');
+    dashboardLink.href = '/invoice-dashboard.html';
+    dashboardLink.textContent = 'View in Invoice Dashboard';
+    dashboardLink.className = 'btn btn-outline';
+    dashboardLink.style.marginLeft = '10px';
+    dashboardLink.target = '_self';
+    statusEl.appendChild(document.createTextNode(' '));
+    statusEl.appendChild(dashboardLink);
+    setTimeout(() => { statusEl.textContent = ''; statusEl.className = 'save-status'; statusEl.replaceChildren(); }, 8000);
+  } catch (e) {
+    document.getElementById('save-status').textContent = '❌ Save failed';
+    document.getElementById('save-status').className = 'save-status err';
+    toast('Save failed: ' + e.message, 'error');
+  }
+}
+
+function fmt(n) {
+  return '₹' + Math.round(n).toLocaleString('en-IN');
+}
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function toast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  el.textContent = (type === 'success' ? '✅ ' : type === 'error' ? '❌ ' : 'ℹ️ ') + msg;
+  el.className = `toast show ${type}`;
+  setTimeout(() => el.className = 'toast', 3500);
+}
+function resetDoc() {
+  if (!confirm('Reset all document data?')) return;
+  rows.length = 0; rowId = 0;
+  ['client-name','client-email','project-title','scope-summary'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  clearCompanyLogo();
+  const params = new URLSearchParams(window.location.search);
+  const clientParam = params.get('client') || params.get('Client');
+  if (clientParam) document.getElementById('client-name').value = decodeURIComponent(clientParam);
+  addRow('', 25000, 1);
+  renderDoc();
+  recalc();
+}
+
+/* ─── Document colors (preview & print) ───────────────────────────────────── */
+const DOC_COLOR_DEFAULTS = { text: '#111111', border: '#dddddd', accent: '#e11d48' };
+
+function hexNorm(s) {
+  const x = String(s).trim().replace(/^#/, '');
+  if (/^[0-9A-Fa-f]{6}$/.test(x)) return '#' + x.toLowerCase();
+  if (/^[0-9A-Fa-f]{3}$/.test(x)) return '#' + x.split('').map(c => c + c).join('').toLowerCase();
+  return null;
+}
+
+function applyDocColors() {
+  const card = document.querySelector('.doc-card');
+  if (!card) return;
+  const text = hexNorm(document.getElementById('doc-color-text-hex')?.value) || DOC_COLOR_DEFAULTS.text;
+  const border = hexNorm(document.getElementById('doc-color-border-hex')?.value) || DOC_COLOR_DEFAULTS.border;
+  const accent = hexNorm(document.getElementById('doc-color-accent-hex')?.value) || DOC_COLOR_DEFAULTS.accent;
+  card.style.setProperty('--doc-text', text);
+  card.style.setProperty('--doc-border', border);
+  card.style.setProperty('--doc-accent', accent);
+  const textEl = document.getElementById('doc-color-text');
+  const borderEl = document.getElementById('doc-color-border');
+  const accentEl = document.getElementById('doc-color-accent');
+  if (textEl) textEl.value = text;
+  if (borderEl) borderEl.value = border;
+  if (accentEl) accentEl.value = accent;
+  document.getElementById('doc-color-text-hex').value = text;
+  document.getElementById('doc-color-border-hex').value = border;
+  document.getElementById('doc-color-accent-hex').value = accent;
+  try { localStorage.setItem('doc_colors', JSON.stringify({ text, border, accent })); } catch (_) {}
+}
+
+function setDocColor(kind, hex) {
+  const h = hexNorm(hex);
+  if (!h) return;
+  const id = kind === 'text' ? 'doc-color-text' : kind === 'border' ? 'doc-color-border' : 'doc-color-accent';
+  const hexId = id + '-hex';
+  document.getElementById(id).value = h;
+  document.getElementById(hexId).value = h;
+  applyDocColors();
+}
+
+function resetDocColors() {
+  document.getElementById('doc-color-text').value = DOC_COLOR_DEFAULTS.text;
+  document.getElementById('doc-color-border').value = DOC_COLOR_DEFAULTS.border;
+  document.getElementById('doc-color-accent').value = DOC_COLOR_DEFAULTS.accent;
+  document.getElementById('doc-color-text-hex').value = DOC_COLOR_DEFAULTS.text;
+  document.getElementById('doc-color-border-hex').value = DOC_COLOR_DEFAULTS.border;
+  document.getElementById('doc-color-accent-hex').value = DOC_COLOR_DEFAULTS.accent;
+  applyDocColors();
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  init();
+  var saved = null;
+  try { saved = JSON.parse(localStorage.getItem('doc_colors') || 'null'); } catch (_) {}
+  if (saved && saved.text && saved.border && saved.accent) {
+    document.getElementById('doc-color-text').value = saved.text;
+    document.getElementById('doc-color-border').value = saved.border;
+    document.getElementById('doc-color-accent').value = saved.accent;
+    document.getElementById('doc-color-text-hex').value = saved.text;
+    document.getElementById('doc-color-border-hex').value = saved.border;
+    document.getElementById('doc-color-accent-hex').value = saved.accent;
+  }
+  applyDocColors();
+
+  document.getElementById('doc-color-text').addEventListener('input', function() { setDocColor('text', this.value); });
+  document.getElementById('doc-color-border').addEventListener('input', function() { setDocColor('border', this.value); });
+  document.getElementById('doc-color-accent').addEventListener('input', function() { setDocColor('accent', this.value); });
+  document.getElementById('doc-color-text-hex').addEventListener('change', function() { setDocColor('text', this.value); });
+  document.getElementById('doc-color-border-hex').addEventListener('change', function() { setDocColor('border', this.value); });
+  document.getElementById('doc-color-accent-hex').addEventListener('change', function() { setDocColor('accent', this.value); });
+  document.getElementById('doc-colors-reset').addEventListener('click', resetDocColors);
+});
+
+document.getElementById('themeToggle').addEventListener('click', function() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('scopesynth_theme', isDark ? 'dark' : 'light');
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ScopeSynth OS — SOP Builder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @page { size: A4 portrait; margin: 18mm 22mm; }
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body { background: white !important; margin: 0 !important; padding: 0 !important; }
+      .no-print { display: none !important; }
+      .page-grid  { display: block !important; }
+      .page-outer { max-width: none !important; padding: 0 !important; }
+      .preview-scroll { overflow: visible !important; }
+      .a4-preview { width: 100% !important; min-height: auto !important; padding: 0 !important;
+                    box-shadow: none !important; border: none !important; }
+    }
+    .a4-preview { width: 210mm; min-height: 297mm; background: white; color: #111827;
+                  padding: 18mm 22mm; box-shadow: 0 8px 40px rgba(0,0,0,.5); }
+    input[type="file"]::-webkit-file-upload-button { display: none; }
+  </style>
+</head>
+
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+
+  <!-- ── Header ── -->
+  <header class="no-print bg-slate-800 border-b border-slate-700 px-6 py-4 sticky top-0 z-20 shadow-lg">
+    <div class="max-w-screen-xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="/dashboard.html"
+           class="text-slate-400 hover:text-rose-400 transition-colors text-sm flex items-center gap-1">
+          ← CRM
+        </a>
+        <span class="text-slate-600">|</span>
+        <h1 class="text-lg font-bold text-rose-500">SOP Builder</h1>
+        <span class="text-xs text-slate-500 bg-slate-700 px-2 py-0.5 rounded-full">Standard Operating Procedure</span>
+      </div>
+      <button onclick="downloadPDF()"
+              class="flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700
+                     text-white text-sm font-semibold rounded-lg transition-colors shadow">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        Download PDF
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Main ── -->
+  <div class="page-outer max-w-screen-xl mx-auto px-4 lg:px-6 py-6">
+    <div class="page-grid grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+
+      <!-- LEFT: Form Panel -->
+      <div class="no-print flex flex-col gap-5">
+
+        <!-- Client pre-fill notice -->
+        <div id="clientBanner" class="hidden items-center gap-2 bg-rose-950/30 border border-rose-800/50
+                                       rounded-lg px-4 py-2.5 text-rose-300 text-sm">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span id="clientBannerText"></span>
+        </div>
+
+        <!-- Document Details -->
+        <section class="bg-slate-800 border border-slate-700 rounded-xl p-5 flex flex-col gap-4">
+          <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Document Details</h2>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs text-slate-400 font-medium">SOP Title</label>
+            <input id="docTitle" type="text" placeholder="e.g. Client Onboarding — Discovery Call Process"
+                   oninput="syncPreview()"
+                   class="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm
+                          text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500 transition-colors" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs text-slate-400 font-medium">Version</label>
+              <input id="docVersion" type="text" value="v1.0" oninput="syncPreview()"
+                     class="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm
+                            text-slate-100 focus:outline-none focus:border-rose-500 transition-colors" />
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs text-slate-400 font-medium">Effective Date</label>
+              <input id="docDate" type="text" oninput="syncPreview()"
+                     class="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm
+                            text-slate-100 focus:outline-none focus:border-rose-500 transition-colors" />
+            </div>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs text-slate-400 font-medium">Department / Owner</label>
+            <input id="docOwner" type="text" placeholder="e.g. Operations · Client Services Team"
+                   oninput="syncPreview()"
+                   class="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm
+                          text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500 transition-colors" />
+          </div>
+        </section>
+
+        <!-- Content Mode Toggle -->
+        <section class="bg-slate-800 border border-slate-700 rounded-xl p-5 flex flex-col gap-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">SOP Content</h2>
+            <div class="flex items-center gap-3 text-sm">
+              <span id="modeLabel" class="text-slate-300 font-medium">Manual Entry</span>
+              <button id="modeToggle" onclick="toggleMode()"
+                      class="relative w-11 h-6 bg-slate-700 border border-slate-600 rounded-full transition-colors"
+                      aria-label="Toggle AI mode">
+                <span id="toggleKnob"
+                      class="absolute top-0.5 left-0.5 w-5 h-5 bg-slate-400 rounded-full transition-transform duration-200"></span>
+              </button>
+              <span class="text-rose-400 font-medium">AI Generation</span>
+            </div>
+          </div>
+
+          <!-- Manual -->
+          <div id="manualSection">
+            <textarea id="manualContent" rows="14"
+                      placeholder="Write or paste your SOP content here...&#10;&#10;Tip: Use the structure:&#10;PURPOSE&#10;SCOPE&#10;ROLES & RESPONSIBILITIES&#10;PREREQUISITES&#10;STEP-BY-STEP INSTRUCTIONS&#10;QUALITY ASSURANCE&#10;ESCALATION PATH"
+                      oninput="syncPreview()"
+                      class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm
+                             text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500
+                             transition-colors resize-y font-mono leading-relaxed"></textarea>
+          </div>
+
+          <!-- AI -->
+          <div id="aiSection" class="hidden flex flex-col gap-3">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs text-slate-400 font-medium">Process Description</label>
+              <textarea id="aiContext" rows="6"
+                        placeholder="Describe the process you need an SOP for. Include: the goal, team members involved, key steps, tools used, and any compliance requirements..."
+                        class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm
+                               text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500
+                               transition-colors resize-y"></textarea>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs text-slate-400 font-medium">Gemini API Key</label>
+              <input id="aiKey" type="password" placeholder="AIza..."
+                     class="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm
+                            text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500 transition-colors" />
+              <p class="text-xs text-slate-500">Saved locally in your browser.</p>
+            </div>
+            <button id="generateBtn" onclick="generateWithAI()"
+                    class="flex items-center justify-center gap-2 w-full py-2.5 bg-rose-600 hover:bg-rose-700
+                           text-white text-sm font-semibold rounded-lg transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+              Generate SOP
+            </button>
+            <div id="aiError" class="hidden text-xs text-red-400 bg-red-900/30 rounded-lg px-3 py-2 border border-red-800"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- RIGHT: Live Preview -->
+      <div class="flex flex-col gap-3">
+        <p class="no-print text-xs text-slate-500 text-center">Live preview — click "Download PDF" to export</p>
+        <div class="preview-scroll overflow-x-auto">
+          <div class="a4-preview" id="docPreview">
+
+            <!-- SOP Header -->
+            <div id="prevHeaderBar"
+                 class="flex items-start justify-between mb-6 pb-4 border-b-2 border-slate-800">
+              <div>
+                <div class="text-xs text-gray-400 font-semibold uppercase tracking-widest mb-1">
+                  Standard Operating Procedure
+                </div>
+                <h1 id="prevTitle" class="text-xl font-bold text-gray-900 leading-tight">
+                  SOP Title
+                </h1>
+              </div>
+              <div class="text-right text-xs text-gray-400 space-y-0.5 flex-shrink-0 ml-4">
+                <div id="prevVersion" class="font-semibold">v1.0</div>
+                <div id="prevDate"></div>
+                <div id="prevOwner" class="text-gray-500"></div>
+              </div>
+            </div>
+
+            <!-- Body content -->
+            <div id="prevContent"
+                 class="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap min-h-[200px]">
+              Your SOP content will appear here as you type or generate...
+            </div>
+
+            <!-- Footer -->
+            <div class="mt-10 pt-3 border-t border-gray-200 flex justify-between text-xs text-gray-400">
+              <span>ScopeSynth OS — Agency OS</span>
+              <span id="prevFooterDate"></span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ── Init ──────────────────────────────────────────────────────────────────
+    let isAIMode        = false;
+    let generatedContent = '';
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // Set default date
+      const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+      document.getElementById('docDate').value = today;
+      document.getElementById('prevFooterDate').textContent = today;
+
+      // Restore API key
+      const saved = localStorage.getItem('ss_gemini_key');
+      if (saved) document.getElementById('aiKey').value = saved;
+
+      // Pre-fill client from URL param
+      const params     = new URLSearchParams(window.location.search);
+      const clientName = params.get('client');
+      if (clientName) {
+        const decoded = decodeURIComponent(clientName);
+        document.getElementById('docTitle').value = `${decoded} — SOP`;
+        const banner = document.getElementById('clientBanner');
+        document.getElementById('clientBannerText').textContent =
+          `Pre-filled for client: ${decoded}`;
+        banner.classList.remove('hidden');
+        banner.classList.add('flex');
+      }
+
+      syncPreview();
+    });
+
+    // ── Mode Toggle ───────────────────────────────────────────────────────────
+    function toggleMode() {
+      isAIMode = !isAIMode;
+      document.getElementById('manualSection').classList.toggle('hidden', isAIMode);
+      document.getElementById('aiSection').classList.toggle('hidden', !isAIMode);
+      document.getElementById('modeLabel').textContent = isAIMode ? 'AI Generation' : 'Manual Entry';
+      const knob = document.getElementById('toggleKnob');
+      const btn  = document.getElementById('modeToggle');
+      knob.style.transform = isAIMode ? 'translateX(20px)' : '';
+      knob.classList.toggle('bg-rose-400', isAIMode);
+      knob.classList.toggle('bg-slate-400', !isAIMode);
+      btn.classList.toggle('bg-rose-900/40', isAIMode);
+    }
+
+    // ── Sync preview ──────────────────────────────────────────────────────────
+    function syncPreview() {
+      const title   = document.getElementById('docTitle').value.trim()   || 'SOP Title';
+      const version = document.getElementById('docVersion').value.trim() || 'v1.0';
+      const date    = document.getElementById('docDate').value.trim();
+      const owner   = document.getElementById('docOwner').value.trim();
+      const content = isAIMode
+        ? generatedContent
+        : (document.getElementById('manualContent').value || 'Your SOP content will appear here as you type or generate...');
+
+      document.getElementById('prevTitle').textContent   = title;
+      document.getElementById('prevVersion').textContent = version;
+      document.getElementById('prevDate').textContent    = date;
+      document.getElementById('prevOwner').textContent   = owner;
+      document.getElementById('prevContent').textContent = content;
+      document.getElementById('prevFooterDate').textContent = date;
+    }
+
+    // ── AI Generation ─────────────────────────────────────────────────────────
+    async function generateWithAI() {
+      const context = document.getElementById('aiContext').value.trim();
+      const apiKey  = document.getElementById('aiKey').value.trim();
+      const errBox  = document.getElementById('aiError');
+      const btn     = document.getElementById('generateBtn');
+
+      if (!context) { showAIError('Please describe the process first.'); return; }
+      if (!apiKey)  { showAIError('Please enter your Gemini API key.'); return; }
+
+      localStorage.setItem('ss_gemini_key', apiKey);
+      errBox.classList.add('hidden');
+      btn.disabled = true;
+      btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/>
+        <path fill="currentColor" d="M4 12a8 8 0 018-8v8z" class="opacity-75"/></svg> Generating SOP...`;
+
+      try {
+        const res = await fetch('/api/generate-sop', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ prompt: context, apiKey }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Generation failed');
+
+        generatedContent = data.content;
+        document.getElementById('manualContent').value = generatedContent;
+        syncPreview();
+      } catch (e) {
+        showAIError(e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Generate SOP`;
+      }
+    }
+
+    function showAIError(msg) {
+      const box = document.getElementById('aiError');
+      box.textContent = msg;
+      box.classList.remove('hidden');
+    }
+
+    function downloadPDF() { syncPreview(); window.print(); }
+  </script>
+
+</body>
+</html>

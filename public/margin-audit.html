@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Margin Defender AI — ScopeSynth OS</title>
+  <script>(function(){var s=localStorage.getItem('scopesynth_theme')||'dark';document.documentElement.classList.toggle('dark',s==='dark');})();</script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;transition:background .2s,color .2s}
+    html:not(.dark) body{background:#f8fafc;color:#0f172a}
+    html:not(.dark) header{background:#fff;border-color:#e2e8f0}
+    html:not(.dark) header h1{color:#0f172a}
+    html:not(.dark) .panel{background:#fff;border-color:#e2e8f0}
+    html:not(.dark) .panel h2{color:#0f172a}
+    html:not(.dark) label{color:#64748b}
+    html:not(.dark) textarea{background:#f1f5f9;border-color:#e2e8f0;color:#0f172a}
+    html:not(.dark) .api-key-wrap input{background:#f1f5f9;border-color:#e2e8f0;color:#0f172a}
+    html:not(.dark) pre{background:#f1f5f9;border-color:#e2e8f0;color:#0f172a}
+    html:not(.dark) .link-btn{color:#64748b;border-color:#e2e8f0}
+    header{background:#1e293b;border-bottom:1px solid #334155;padding:16px 24px;display:flex;align-items:center;gap:12px}
+    header .logo{width:36px;height:36px;background:#e11d48;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff}
+    header h1{font-size:18px;font-weight:700;color:#f1f5f9}
+    header span{font-size:12px;color:#94a3b8;margin-left:4px}
+    .badge{background:#e11d4820;color:#e11d48;border:1px solid #e11d4840;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-left:auto}
+    a.link-btn{color:#94a3b8;text-decoration:none;font-size:12px;padding:5px 12px;border:1px solid #334155;border-radius:8px;margin-left:8px}
+    a.link-btn:hover{border-color:#e11d48;color:#e11d48}
+    main{flex:1;padding:32px 24px;max-width:900px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:24px}
+    .panel{background:#1e293b;border:1px solid #334155;border-radius:14px;padding:24px}
+    .panel h2{font-size:15px;font-weight:700;color:#f1f5f9;margin-bottom:16px}
+    label{font-size:13px;color:#94a3b8;display:block;margin-bottom:8px;font-weight:500}
+    textarea{width:100%;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:14px 16px;color:#e2e8f0;font-size:13px;line-height:1.7;resize:vertical;min-height:200px;font-family:inherit}
+    textarea:focus{border-color:#e11d48;outline:none}
+    .api-key-wrap{margin-bottom:16px}
+    .api-key-wrap input{width:100%;padding:10px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px}
+    .btn-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .btn-primary{background:#e11d48;color:#fff;border:none;border-radius:10px;padding:13px 28px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px}
+    .btn-primary:hover{background:#be123c}
+    .btn-primary:disabled{background:#334155;color:#64748b;cursor:not-allowed}
+    .btn-secondary{background:transparent;color:#94a3b8;border:1px solid #334155;border-radius:10px;padding:13px 20px;font-size:14px;cursor:pointer}
+    .btn-secondary:hover{border-color:#e11d48;color:#e11d48}
+    #result{display:none}
+    pre{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:20px;font-size:13px;line-height:1.8;white-space:pre-wrap;font-family:monospace;color:#e2e8f0;overflow-x:auto}
+    .loader{display:none;flex-direction:column;align-items:center;gap:12px;padding:40px}
+    .loader .spinner{width:40px;height:40px;border:3px solid #334155;border-top-color:#e11d48;border-radius:50%;animation:spin 0.8s linear infinite}
+    .loader p{color:#94a3b8;font-size:14px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .export-btn{background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:8px;padding:10px 18px;font-size:13px;cursor:pointer;margin-left:8px}
+    .export-btn:hover{border-color:#e11d48;color:#e11d48}
+    @media print{header,.panel:first-of-type .btn-row,main .panel:first-of-type textarea,.api-key-wrap,.loader{display:none!important} body{background:#fff;color:#000} pre{background:#f8f8f8;color:#000;border:1px solid #ddd}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="logo">MD</div>
+  <div><h1>Margin Defender AI <span>— ScopeSynth OS</span></h1></div>
+  <button type="button" id="themeToggle" aria-label="Toggle theme" style="width:36px;height:36px;border-radius:8px;border:1px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px">🌓</button>
+  <div class="badge">🤖 Gemini 2.5 Flash</div>
+  <a href="/document-engine.html" class="link-btn">Document Engine</a>
+  <a href="/lead-intake.html" class="link-btn">Lead Intake</a>
+  <a href="/dashboard.html" class="link-btn">CRM</a>
+</header>
+
+<main>
+  <div class="panel" id="input-panel">
+    <h2>📋 Paste Your Draft Scope</h2>
+    <div class="api-key-wrap">
+      <label>Gemini API Key (BYOK)</label>
+      <input type="password" id="api-key" placeholder="AIza..."/>
+    </div>
+    <label>Enter the project scope or SOW to audit for margin bleed risks (min 50 characters):</label>
+    <textarea id="scope" placeholder="E.g.: We need a full-stack web application with user authentication, dashboard, and 'unlimited' customization. The project should be delivered ASAP with full support included..."></textarea>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:10px;margin-bottom:16px">
+      <span class="char-count" id="char-count">0 characters</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" id="analyze-btn">🛡️ Run Audit</button>
+      <button class="btn-secondary" id="clear-btn">Clear</button>
+    </div>
+  </div>
+
+  <div class="loader" id="loader">
+    <div class="spinner"></div>
+    <p>Margin Defender is analyzing your scope...</p>
+  </div>
+
+  <div class="panel" id="result">
+    <h2>🛡️ Risk Audit Report
+      <button class="export-btn" onclick="window.print()">🖨️ Export PDF</button>
+      <button class="export-btn" onclick="copyReport()">📋 Copy</button>
+    </h2>
+    <pre id="report-text"></pre>
+  </div>
+</main>
+
+<script>
+  const scopeEl = document.getElementById('scope');
+  const charCount = document.getElementById('char-count');
+  const analyzeBtn = document.getElementById('analyze-btn');
+  const clearBtn = document.getElementById('clear-btn');
+  const loader = document.getElementById('loader');
+  const result = document.getElementById('result');
+  const reportText = document.getElementById('report-text');
+  const apiKeyEl = document.getElementById('api-key');
+
+  scopeEl.addEventListener('input', () => { charCount.textContent = scopeEl.value.length + ' characters'; });
+
+  clearBtn.addEventListener('click', () => {
+    scopeEl.value = '';
+    charCount.textContent = '0 characters';
+    result.style.display = 'none';
+    loader.style.display = 'none';
+    analyzeBtn.disabled = false;
+  });
+
+  analyzeBtn.addEventListener('click', async () => {
+    const scope = scopeEl.value.trim();
+    const apiKey = apiKeyEl.value.trim();
+    if (!scope) { alert('Please paste a scope to audit.'); return; }
+    if (!apiKey) { alert('Please enter your Gemini API key.'); return; }
+    if (scope.length < 50) { alert('Scope must be at least 50 characters.'); return; }
+    analyzeBtn.disabled = true;
+    result.style.display = 'none';
+    loader.style.display = 'flex';
+    try {
+      const r = await fetch('/api/margin-audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scope, apiKey })
+      });
+      const data = await r.json();
+      loader.style.display = 'none';
+      if (!r.ok) throw new Error(data.error || 'Analysis failed');
+      reportText.textContent = data.report;
+      result.style.display = 'block';
+      result.scrollIntoView({ behavior: 'smooth' });
+    } catch (e) {
+      loader.style.display = 'none';
+      alert(e.message || 'Analysis failed.');
+    }
+    analyzeBtn.disabled = false;
+  });
+
+  function copyReport() {
+    navigator.clipboard.writeText(reportText.textContent);
+    alert('Report copied to clipboard!');
+  }
+  scopeEl.addEventListener('keydown', e => { if (e.ctrlKey && e.key === 'Enter') analyzeBtn.click(); });
+
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('scopesynth_theme', isDark ? 'dark' : 'light');
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ScopeSynth OS — Case Study Builder</title>
+  <script>
+    (function(){var s=localStorage.getItem('scopesynth_theme')||'dark';document.documentElement.classList.toggle('dark',s==='dark');})();
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={darkMode:'class'};</script>
+  <style>
+    @page { size: A4 portrait; margin: 18mm 22mm; }
+    @media print {
+      /* Core resets */
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body { background: white !important; margin: 0 !important; padding: 0 !important; }
+
+      /* Hide all UI chrome */
+      .no-print { display: none !important; }
+
+      /* Collapse the two-column grid — left panel gone, preview takes full page */
+      .page-grid    { display: block !important; }
+      .page-outer   { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+      .preview-scroll { overflow: visible !important; width: auto !important; }
+
+      /* A4 preview: full-width, no shadow, no on-screen padding (page margins cover it) */
+      .a4-preview {
+        width: 100% !important;
+        min-height: auto !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+    }
+    /* On-screen A4 preview */
+    .a4-preview {
+      width: 210mm; min-height: 297mm;
+      background: white; color: #111827;
+      padding: 18mm 22mm;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+    input[type="file"]::-webkit-file-upload-button { display: none; }
+    .toggle-knob { transition: transform .2s; }
+  </style>
+</head>
+
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 min-h-screen transition-colors duration-200">
+
+  <header class="no-print bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 sticky top-0 z-20 shadow-sm dark:shadow-lg">
+    <div class="max-w-screen-xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="/dashboard.html"
+           class="text-slate-500 dark:text-slate-400 hover:text-rose-500 transition-colors text-sm flex items-center gap-1">
+          ← CRM
+        </a>
+        <span class="text-slate-400 dark:text-slate-600">|</span>
+        <h1 class="text-lg font-bold text-rose-500">Case Study Builder</h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <button type="button" id="themeToggle" aria-label="Toggle theme" class="p-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors no-print">
+          <svg class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <svg class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+        </button>
+      <button onclick="downloadPDF()"
+              class="flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700
+                     text-white text-sm font-semibold rounded-lg transition-colors shadow">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        Download PDF
+      </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="page-outer max-w-screen-xl mx-auto px-4 lg:px-6 py-6">
+    <div class="page-grid grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+
+      <div class="no-print flex flex-col gap-5">
+        <section class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 flex flex-col gap-4">
+          <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Document Details</h2>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs text-slate-400 font-medium">Document Title</label>
+            <input id="docTitle" type="text" placeholder="e.g. How Acme Corp Grew Revenue by 42%"
+                   oninput="syncPreview()"
+                   class="bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm
+                          text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500 transition-colors" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs text-slate-400 font-medium">Header Text</label>
+            <input id="docHeader" type="text" placeholder="e.g. Prepared by ScopeSynth OS · March 2026"
+                   oninput="syncPreview()"
+                   class="bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm
+                          text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500 transition-colors" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs text-slate-400 font-medium">Footer Text</label>
+            <input id="docFooter" type="text" placeholder="e.g. © 2026 YourAgency — Confidential"
+                   oninput="syncPreview()"
+                   class="bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm
+                          text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500 transition-colors" />
+          </div>
+        </section>
+
+        <section class="bg-slate-800 border border-slate-700 rounded-xl p-5 flex flex-col gap-4">
+          <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Brand Logo</h2>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs text-slate-400 font-medium">Logo URL</label>
+            <div class="flex gap-2">
+              <input id="logoUrl" type="url" placeholder="https://example.com/logo.png"
+                     class="flex-1 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm
+                            text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500 transition-colors" />
+              <button onclick="applyLogoUrl()"
+                      class="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 border border-slate-300 dark:border-slate-600
+                             rounded-lg text-sm text-slate-200 transition-colors">Apply</button>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-slate-600">
+            <hr class="flex-1 border-slate-700" /><span class="text-xs">or</span><hr class="flex-1 border-slate-700" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs text-slate-400 font-medium">Upload Local File</label>
+            <label for="logoFile"
+                   class="flex items-center justify-center gap-2 border-2 border-dashed border-slate-600
+                          hover:border-rose-500 rounded-lg py-3 cursor-pointer transition-colors text-sm text-slate-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+              </svg>
+              Click to upload PNG / JPG / SVG
+            </label>
+            <input type="file" id="logoFile" accept="image/*" class="hidden" onchange="handleLogoUpload(event)" />
+          </div>
+          <div id="logoPreviewWrap" class="hidden">
+            <p class="text-xs text-slate-400 mb-2">Preview:</p>
+            <img id="logoPreviewImg" src="" alt="Logo preview"
+                 class="max-h-16 object-contain rounded border border-slate-600 p-1 bg-slate-700" />
+            <button onclick="clearLogo()" class="mt-2 text-xs text-rose-400 hover:text-rose-300 transition-colors">✕ Remove logo</button>
+          </div>
+        </section>
+
+        <section class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 flex flex-col gap-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Content</h2>
+            <div class="flex items-center gap-3 text-sm">
+              <span id="modeLabel" class="text-slate-300 font-medium">Manual Entry</span>
+              <button id="modeToggle" onclick="toggleMode()"
+                      class="relative w-11 h-6 bg-slate-700 border border-slate-600 rounded-full transition-colors"
+                      aria-label="Toggle AI mode">
+                <span id="toggleKnob"
+                      class="toggle-knob absolute top-0.5 left-0.5 w-5 h-5 bg-slate-400 rounded-full"></span>
+              </button>
+              <span class="text-rose-400 font-medium">AI Generation</span>
+            </div>
+          </div>
+          <div id="manualSection">
+            <textarea id="manualContent" rows="12" placeholder="Write your case study content here..."
+                      oninput="syncPreview()"
+                      class="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm
+                             text-slate-800 dark:text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500
+                             transition-colors resize-y font-mono"></textarea>
+          </div>
+          <div id="aiSection" class="hidden flex flex-col gap-3">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs text-slate-400 font-medium">Project Context</label>
+              <textarea id="aiContext" rows="5"
+                        placeholder="Describe the client, the problem you solved, measurable results, timeline, and any key facts..."
+                        class="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm
+                               text-slate-800 dark:text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500
+                               transition-colors resize-y"></textarea>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs text-slate-400 font-medium">Gemini API Key</label>
+              <input id="aiKey" type="password" placeholder="AIza..."
+                     class="bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm
+                            text-slate-800 dark:text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500 transition-colors" />
+              <p class="text-xs text-slate-500">Saved locally in your browser.</p>
+            </div>
+            <button id="generateBtn" onclick="generateWithAI()"
+                    class="flex items-center justify-center gap-2 w-full py-2.5 bg-rose-600 hover:bg-rose-700
+                           text-white text-sm font-semibold rounded-lg transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+              Generate Case Study
+            </button>
+            <div id="aiError" class="hidden text-xs text-red-400 bg-red-900/30 rounded-lg px-3 py-2 border border-red-800"></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <p class="no-print text-xs text-slate-500 text-center">Live document preview — click "Download PDF" to print</p>
+        <div class="preview-scroll overflow-x-auto">
+          <div class="a4-preview" id="docPreview">
+            <div id="prevHeader" class="text-xs text-gray-400 mb-6 pb-3 border-b border-gray-200 font-medium tracking-wide"></div>
+            <div id="prevLogoWrap" class="mb-5 hidden">
+              <img id="prevLogo" src="" alt="Brand logo" class="max-h-14 object-contain" />
+            </div>
+            <h1 id="prevTitle" class="text-2xl font-bold text-gray-900 mb-6 leading-tight border-b-4 border-rose-600 pb-3">Case Study</h1>
+            <div id="prevContent" class="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap min-h-[200px]">Your content will appear here as you type...</div>
+            <!-- Footer in normal flow so it prints correctly -->
+            <div id="prevFooter" class="text-xs text-gray-400 mt-10 pt-3 border-t border-gray-200 font-medium tracking-wide"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let logoDataUrl = null;
+    let isAIMode    = false;
+    let generatedContent = '';
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('ss_gemini_key');
+      if (saved) document.getElementById('aiKey').value = saved;
+      const params = new URLSearchParams(window.location.search);
+      const client = params.get('client');
+      if (client) {
+        document.getElementById('docTitle').value = 'Case Study — ' + decodeURIComponent(client);
+      }
+      syncPreview();
+    });
+
+    function toggleMode() {
+      isAIMode = !isAIMode;
+      document.getElementById('manualSection').classList.toggle('hidden', isAIMode);
+      document.getElementById('aiSection').classList.toggle('hidden', !isAIMode);
+      document.getElementById('modeLabel').textContent = isAIMode ? 'AI Generation' : 'Manual Entry';
+      const knob = document.getElementById('toggleKnob');
+      const btn  = document.getElementById('modeToggle');
+      knob.style.transform = isAIMode ? 'translateX(20px)' : 'translateX(0)';
+      knob.classList.toggle('bg-rose-400', isAIMode);
+      knob.classList.toggle('bg-slate-400', !isAIMode);
+      btn.classList.toggle('bg-rose-900/40', isAIMode);
+    }
+
+    function handleLogoUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        logoDataUrl = e.target.result;
+        showLogoPreview(logoDataUrl);
+        syncPreview();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function applyLogoUrl() {
+      const url = document.getElementById('logoUrl').value.trim();
+      if (!url) return;
+      logoDataUrl = url;
+      showLogoPreview(url);
+      syncPreview();
+    }
+
+    function showLogoPreview(src) {
+      document.getElementById('logoPreviewImg').src = src;
+      document.getElementById('logoPreviewWrap').classList.remove('hidden');
+    }
+
+    function clearLogo() {
+      logoDataUrl = null;
+      document.getElementById('logoPreviewWrap').classList.add('hidden');
+      document.getElementById('logoPreviewImg').src = '';
+      document.getElementById('logoUrl').value = '';
+      document.getElementById('logoFile').value = '';
+      syncPreview();
+    }
+
+    function syncPreview() {
+      const title   = document.getElementById('docTitle').value.trim()   || 'Case Study';
+      const header  = document.getElementById('docHeader').value.trim();
+      const footer  = document.getElementById('docFooter').value.trim();
+      const content = isAIMode
+        ? generatedContent
+        : (document.getElementById('manualContent').value || 'Your content will appear here as you type...');
+
+      document.getElementById('prevTitle').textContent   = title;
+      document.getElementById('prevHeader').textContent  = header;
+      document.getElementById('prevFooter').textContent  = footer;
+      document.getElementById('prevContent').textContent = content;
+
+      const logoWrap = document.getElementById('prevLogoWrap');
+      const logoImg  = document.getElementById('prevLogo');
+      if (logoDataUrl) {
+        logoImg.src = logoDataUrl;
+        logoWrap.classList.remove('hidden');
+      } else {
+        logoWrap.classList.add('hidden');
+      }
+    }
+
+    async function generateWithAI() {
+      const context = document.getElementById('aiContext').value.trim();
+      const apiKey  = document.getElementById('aiKey').value.trim();
+      const errBox  = document.getElementById('aiError');
+      const btn     = document.getElementById('generateBtn');
+
+      if (!context) { showAIError('Please enter project context first.'); return; }
+      if (!apiKey)  { showAIError('Please enter your Gemini API key.'); return; }
+
+      localStorage.setItem('ss_gemini_key', apiKey);
+      errBox.classList.add('hidden');
+      btn.disabled = true;
+      btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/><path fill="currentColor" d="M4 12a8 8 0 018-8v8z" class="opacity-75"/></svg> Generating...';
+
+      try {
+        const res = await fetch('/api/generate-casestudy', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ prompt: context, apiKey }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Generation failed');
+
+        generatedContent = data.content;
+        document.getElementById('manualContent').value = generatedContent;
+        syncPreview();
+      } catch (e) {
+        showAIError(e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Generate Case Study';
+      }
+    }
+
+    function showAIError(msg) {
+      const box = document.getElementById('aiError');
+      box.textContent = msg;
+      box.classList.remove('hidden');
+    }
+
+    function downloadPDF() {
+      syncPreview();
+      window.print();
+    }
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('scopesynth_theme', isDark ? 'dark' : 'light');
+    });
+  </script>
+</body>
+</html>

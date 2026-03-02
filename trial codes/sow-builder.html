@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ScopeSynth OS — SOW Builder</title>
+
+  <!-- ── Theme init: runs before paint to prevent flash ── -->
+  <script>
+    (function () {
+      const saved = localStorage.getItem('scopesynth_theme') || 'dark';
+      if (saved === 'dark') document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+    })();
+  </script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+        },
+      },
+    };
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #be123c; border-radius: 4px; }
+
+    /* ── Gradient text ── */
+    .gradient-text {
+      background: linear-gradient(120deg, #be123c 0%, #e11d48 55%, #9f1239 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── Input focus — rose ring ── */
+    .input-rose:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px #be123c, 0 0 10px rgba(190,18,60,0.15);
+    }
+
+    /* ── Select chevron ── */
+    .select-rose {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2394a3b8'%3E%3Cpath fill-rule='evenodd' d='M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      background-size: 1.1rem;
+    }
+
+    /* ── Spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 0.75s linear infinite; }
+
+    /* ── Fade-in ── */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fadeInUp 0.45s cubic-bezier(0.16,1,0.3,1) forwards; }
+
+    /* ── Scope preview font ── */
+    #scopePreview { font-family: 'JetBrains Mono', monospace; }
+
+    /* ── Depth pill ── */
+    .depth-pill {
+      display: inline-flex; align-items: center;
+      padding: 1px 8px; border-radius: 999px;
+      font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em;
+      border-width: 1px;
+    }
+
+    /* ── Table row hover ── */
+    .sow-row:hover td { background: rgba(190,18,60,0.05); }
+
+    /* ── Subtle paper texture on light mode body ── */
+    body { background-attachment: fixed; }
+
+    /* ── Print styles ── */
+    @media print {
+      @page { margin: 0; size: A4; }
+      body  { margin: 0; background: #fff !important; }
+    }
+
+    /* ── PDF Printable Template — always light/paper regardless of dark mode ── */
+    #sow-printable-document {
+      position: absolute;
+      left: -9999px;
+      top: 0;
+      width: 794px;
+      background: #ffffff !important;
+      color: #111827 !important;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 13px;
+      line-height: 1.75;
+      padding: 56px 64px;
+      box-sizing: border-box;
+    }
+    #sow-printable-document * { color: inherit !important; background: transparent !important; }
+    #sow-printable-document .pdf-rule { border: none; border-top: 1px solid #e2e8f0; margin: 20px 0; }
+    #sow-printable-document .pdf-h1  { font-size: 22px; font-weight: 700; color: #111827 !important; margin: 0 0 4px; }
+    #sow-printable-document .pdf-h2  { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #be123c !important; margin: 24px 0 8px; }
+    #sow-printable-document .pdf-meta { font-size: 12px; color: #6b7280 !important; }
+    #sow-printable-document .pdf-body { font-size: 13px; color: #374151 !important; white-space: pre-line; }
+    #sow-printable-document .pdf-scope-list  { list-style: none; padding: 0; margin: 0; }
+    #sow-printable-document .pdf-phase-item  { font-weight: 600; font-size: 13px; margin: 8px 0 2px; color: #111827 !important; }
+    #sow-printable-document .pdf-feature-item{ padding-left: 20px; font-size: 12px; color: #374151 !important; margin: 2px 0; }
+    #sow-printable-document .pdf-feature-item::before { content: '–  '; color: #be123c !important; font-weight: 600; }
+    #sow-printable-document .pdf-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+    #sow-printable-document .pdf-table th { text-align: left; background: #f8fafc !important; color: #6b7280 !important; font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; padding: 8px 10px; border-bottom: 1px solid #e2e8f0; }
+    #sow-printable-document .pdf-table td { padding: 7px 10px; border-bottom: 1px solid #f1f5f9; color: #374151 !important; }
+    #sow-printable-document .pdf-table td.right { text-align: right; font-family: 'JetBrains Mono', monospace; }
+    #sow-printable-document .pdf-table tr.total-row td { font-weight: 700; border-top: 2px solid #e2e8f0; font-size: 13px; color: #111827 !important; }
+    #sow-printable-document .pdf-signoff { margin-top: 32px; font-size: 13px; color: #374151 !important; }
+    #sow-printable-document .pdf-agency  { font-weight: 700; color: #be123c !important; margin-top: 6px; font-size: 14px; }
+    #sow-printable-document .pdf-doc-header {
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 2px solid #be123c;
+      padding-bottom: 8px; margin-bottom: 28px;
+      font-size: 10px; font-weight: 600; letter-spacing: 0.07em;
+      text-transform: uppercase; color: #6b7280 !important;
+    }
+    #sow-printable-document .pdf-doc-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      border-top: 1px solid #e2e8f0;
+      margin-top: 36px; padding-top: 12px;
+      font-size: 10px; color: #9ca3af !important;
+    }
+  </style>
+</head>
+
+<!-- ══ Light: bg-slate-50 / Dark: bg-slate-900 ══ -->
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-200 font-sans min-h-screen antialiased transition-colors duration-200">
+
+  <!-- ══ Header ══════════════════════════════════════════════════════════════════ -->
+  <header class="print:hidden sticky top-0 z-20 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
+    <div class="max-w-3xl mx-auto px-6 py-4 flex items-center gap-3">
+
+      <!-- Logo -->
+      <div class="w-8 h-8 rounded-lg bg-rose-600 flex items-center justify-center shrink-0 shadow shadow-rose-700/30">
+        <svg viewBox="0 0 24 24" class="w-4 h-4 text-white fill-none stroke-white stroke-2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z"/>
+        </svg>
+      </div>
+
+      <div class="leading-none">
+        <span class="text-base font-bold gradient-text">ScopeSynth OS</span>
+        <p class="text-xs text-slate-500 dark:text-slate-500 mt-0.5">Agency Statement of Work Generator</p>
+      </div>
+
+      <!-- ← CRM back link -->
+      <a href="/dashboard.html"
+         class="print:hidden flex items-center gap-1 text-sm font-medium text-slate-400
+                dark:text-slate-500 hover:text-rose-500 dark:hover:text-rose-400
+                transition-colors mr-2 shrink-0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/>
+        </svg>
+        CRM
+      </a>
+      <div class="ml-auto flex items-center gap-2">
+        <span class="text-xs px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20 font-semibold tracking-wide">v4.0</span>
+        <span class="hidden sm:inline text-xs px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-500 border border-slate-200 dark:border-slate-700 font-medium">Gemini 2.5 Flash</span>
+
+        <!-- Theme Toggle -->
+        <button id="themeToggle" type="button"
+          class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:border-rose-300 dark:hover:border-rose-700 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
+          title="Toggle theme">
+          <!-- Sun (shown in dark mode to switch to light) -->
+          <svg id="iconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-4 h-4 hidden dark:block">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0z"/>
+          </svg>
+          <!-- Moon (shown in light mode to switch to dark) -->
+          <svg id="iconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-4 h-4 block dark:hidden">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══ Main ════════════════════════════════════════════════════════════════════ -->
+  <!-- Client pre-fill banner (shown only when opened from CRM) -->
+  <div id="clientParamBanner"
+       class="print:hidden hidden max-w-3xl mx-auto px-6 pt-4">
+    <div class="flex items-center gap-2 bg-rose-50 dark:bg-rose-900/20 border border-rose-200
+                dark:border-rose-800/50 rounded-xl px-4 py-2.5 text-rose-700 dark:text-rose-300 text-sm">
+      <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <span id="clientParamText"></span>
+    </div>
+  </div>
+
+  <main class="print:hidden max-w-3xl mx-auto px-6 py-10 space-y-5">
+
+    <!-- ── BYOK Key Card ──────────────────────────────────────────────────────── -->
+    <section class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 shadow-sm dark:shadow-none space-y-3">
+      <div class="flex items-center gap-2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-4 h-4 text-rose-500 shrink-0">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/>
+        </svg>
+        <label class="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-widest">Gemini API Key</label>
+      </div>
+
+      <div class="relative">
+        <input
+          id="apiKey"
+          type="password"
+          placeholder="AIza..."
+          autocomplete="off"
+          class="input-rose w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 transition-shadow font-mono pr-10"
+        />
+        <button id="toggleKey" type="button"
+          class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
+          title="Toggle visibility">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Remember Me toggle -->
+      <label class="flex items-center gap-2.5 cursor-pointer select-none w-fit group">
+        <div class="relative">
+          <input id="rememberKey" type="checkbox" class="sr-only peer" />
+          <div class="w-9 h-5 rounded-full bg-slate-300 dark:bg-slate-700 peer-checked:bg-rose-600 transition-colors duration-200"></div>
+          <div class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow peer-checked:translate-x-4 transition-transform duration-200"></div>
+        </div>
+        <span class="text-xs text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">Remember my key on this device</span>
+      </label>
+    </section>
+
+    <!-- ── Document Settings Card ────────────────────────────────────────────────── -->
+    <section class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 shadow-sm dark:shadow-none space-y-4">
+      <div class="flex items-center gap-2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-4 h-4 text-rose-500 shrink-0">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9z"/>
+        </svg>
+        <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">Document Settings</h2>
+        <span class="ml-auto text-xs text-slate-400 dark:text-slate-600">Used in PDF letterhead</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <!-- Client Name -->
+        <div class="space-y-1.5">
+          <label for="clientName" class="block text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-widest">Client Name</label>
+          <input id="clientName" type="text" placeholder="e.g. Acme Corporation"
+            class="input-rose w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 transition-shadow" />
+        </div>
+        <!-- Project Name -->
+        <div class="space-y-1.5">
+          <label for="projectName" class="block text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-widest">Project Name</label>
+          <input id="projectName" type="text" placeholder="e.g. E-commerce Platform v2"
+            class="input-rose w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 transition-shadow" />
+        </div>
+        <!-- Agency Name -->
+        <div class="space-y-1.5">
+          <label for="agencyName" class="block text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-widest">Agency Name</label>
+          <input id="agencyName" type="text" placeholder="e.g. Studio Zero"
+            class="input-rose w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 transition-shadow" />
+        </div>
+        <!-- PDF Header Text -->
+        <div class="space-y-1.5">
+          <label for="pdfHeaderText" class="block text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-widest">
+            PDF Header
+            <span class="normal-case font-normal text-slate-400 dark:text-slate-600 ml-1">— appears at top of document</span>
+          </label>
+          <input id="pdfHeaderText" type="text" placeholder="e.g. Confidential | Statement of Work"
+            class="input-rose w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 transition-shadow" />
+        </div>
+        <!-- PDF Footer Text -->
+        <div class="space-y-1.5">
+          <label for="pdfFooterText" class="block text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-widest">
+            PDF Footer
+            <span class="normal-case font-normal text-slate-400 dark:text-slate-600 ml-1">— appears at bottom of document</span>
+          </label>
+          <input id="pdfFooterText" type="text" placeholder="e.g. © 2026 Agency Name · All rights reserved"
+            class="input-rose w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 transition-shadow" />
+        </div>
+        <!-- Letterhead Image — URL or local upload -->
+        <div class="sm:col-span-2 space-y-1.5">
+          <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-widest">Letterhead Image</label>
+          <div class="flex gap-2 items-center">
+            <!-- URL option -->
+            <input id="letterheadUrl" type="url" placeholder="https://example.com/logo.png"
+              class="input-rose flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 transition-shadow" />
+            <!-- Divider -->
+            <span class="text-xs text-slate-400 dark:text-slate-600 shrink-0 font-medium">or</span>
+            <!-- Local file upload -->
+            <label for="letterheadFile"
+              class="shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 text-sm text-slate-500 dark:text-slate-400 hover:border-rose-400 dark:hover:border-rose-500 hover:text-rose-600 dark:hover:text-rose-400 cursor-pointer transition-colors select-none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-4 h-4 shrink-0">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+              </svg>
+              Upload
+              <input id="letterheadFile" type="file" accept="image/*" class="sr-only" />
+            </label>
+          </div>
+          <!-- Uploaded image preview -->
+          <div id="letterheadPreviewWrap" class="hidden flex items-center gap-3 pt-1">
+            <img id="letterheadPreview" src="" alt="Letterhead preview"
+              class="max-h-10 max-w-[160px] rounded-lg border border-slate-200 dark:border-slate-600 object-contain bg-white dark:bg-slate-900 p-1" />
+            <button id="clearLetterhead" type="button"
+              class="text-xs text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+              Remove
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Agency Global Settings Card ──────────────────────────────────────────── -->
+    <section class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 shadow-sm dark:shadow-none space-y-4">
+      <div class="flex items-center gap-2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-4 h-4 text-rose-500 shrink-0">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.272-.806.108-1.204-.165-.397-.506-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+        </svg>
+        <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">Agency Global Settings</h2>
+        <span class="ml-auto text-xs text-slate-400 dark:text-slate-600">Applied to all line items</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+        <!-- Base Hourly Rate -->
+        <div class="space-y-1.5">
+          <label for="baseRate" class="block text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-widest">
+            Base Hourly Rate
+            <span class="normal-case font-normal text-slate-400 dark:text-slate-600 ml-1">(₹)</span>
+          </label>
+          <input
+            id="baseRate"
+            type="number"
+            min="1"
+            step="1"
+            value="100"
+            class="input-rose w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 transition-shadow font-mono"
+          />
+        </div>
+
+        <!-- Tax Rate -->
+        <div class="space-y-1.5">
+          <label for="taxRate" class="block text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-widest">
+            Tax Rate
+            <span class="normal-case font-normal text-slate-400 dark:text-slate-600 ml-1">(%)</span>
+          </label>
+          <input
+            id="taxRate"
+            type="number"
+            min="0"
+            step="0.1"
+            value="18"
+            class="input-rose w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 transition-shadow font-mono"
+          />
+        </div>
+
+        <!-- Team Allocation -->
+        <div class="space-y-1.5">
+          <label for="multiplier" class="block text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-widest">Team Allocation</label>
+          <select
+            id="multiplier"
+            class="input-rose select-rose w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 transition-shadow appearance-none cursor-pointer pr-9">
+            <option value="0.8">Junior Devs (0.8×)</option>
+            <option value="1.0" selected>Standard (1.0×)</option>
+            <option value="1.5">Senior / Expert (1.5×)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Live effective rate preview -->
+      <p class="text-xs text-slate-500 dark:text-slate-500">
+        Effective rate:
+        <span id="effectiveRatePreview" class="font-mono font-semibold text-rose-600 dark:text-rose-400">₹100.00 / hr</span>
+      </p>
+    </section>
+
+    <!-- ── Executive Summary Engine Card ────────────────────────────────────────── -->
+    <section class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 shadow-sm dark:shadow-none space-y-4">
+      <div class="flex items-center gap-2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-4 h-4 text-rose-500 shrink-0">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09zM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456z"/>
+        </svg>
+        <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">Executive Summary Engine</h2>
+      </div>
+
+      <!-- Mode Toggle -->
+      <div class="flex gap-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl w-fit">
+        <label class="cursor-pointer">
+          <input type="radio" name="summaryMode" id="modeManual" value="manual" class="sr-only peer" checked />
+          <div class="peer-checked:bg-white dark:peer-checked:bg-slate-700 peer-checked:text-slate-800 dark:peer-checked:text-slate-100 peer-checked:shadow-sm
+                      text-slate-500 dark:text-slate-500 text-sm font-semibold
+                      px-4 py-2 rounded-lg transition-all duration-150 select-none flex items-center gap-1.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931zm0 0L19.5 7.125"/>
+            </svg>
+            Manual Typing
+          </div>
+        </label>
+        <label class="cursor-pointer">
+          <input type="radio" name="summaryMode" id="modeAI" value="ai" class="sr-only peer" />
+          <div class="peer-checked:bg-rose-600 peer-checked:text-white peer-checked:shadow-sm
+                      text-slate-500 dark:text-slate-500 text-sm font-semibold
+                      px-4 py-2 rounded-lg transition-all duration-150 select-none flex items-center gap-1.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09z"/>
+            </svg>
+            AI Generation
+          </div>
+        </label>
+      </div>
+
+      <!-- Manual Panel -->
+      <div id="manualPanel" class="space-y-1.5">
+        <label for="manualSummary" class="block text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-widest">
+          Executive Summary
+          <span class="normal-case font-normal text-slate-400 dark:text-slate-600 ml-1">— write your own 2-paragraph summary</span>
+        </label>
+        <textarea id="manualSummary" rows="6"
+          placeholder="Write your persuasive executive summary here. Describe the project vision, business value, and expected ROI across two paragraphs..."
+          class="input-rose w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 transition-shadow leading-6 resize-y"></textarea>
+      </div>
+
+      <!-- AI Panel (hidden by default) -->
+      <div id="aiPanel" class="hidden space-y-1.5">
+        <label for="aiContext" class="block text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-widest">
+          Project Context &amp; AI Guidance
+          <span class="normal-case font-normal text-slate-400 dark:text-slate-600 ml-1">— ideas, audience, ROI goals for Gemini</span>
+        </label>
+        <textarea id="aiContext" rows="4"
+          placeholder="e.g. Target audience: B2B SaaS companies. Goal: 3× productivity improvement. Key differentiator: real-time collaboration. Emphasise ROI within 6 months..."
+          class="input-rose w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 transition-shadow leading-6 resize-y"></textarea>
+        <p class="text-xs text-slate-400 dark:text-slate-600">Gemini will incorporate this context alongside your technical scope to write a persuasive executive summary.</p>
+      </div>
+    </section>
+
+    <!-- ── Scope Builder Card ─────────────────────────────────────────────────── -->
+    <section class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 shadow-sm dark:shadow-none space-y-4">
+      <div>
+        <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">Scope Builder</h2>
+        <p class="text-xs text-slate-500 mt-0.5">Select a phase and a common feature to auto-fill — or write your own.</p>
+      </div>
+
+      <!-- Row 1: Phase + Common Features (cascading) ────────────────────────── -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+        <!-- Dropdown 1: Project Phase -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-widest">Project Phase</label>
+          <select id="phaseSelect"
+            class="input-rose select-rose w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 transition-shadow appearance-none cursor-pointer pr-9">
+            <option value="Discovery &amp; Strategy">Discovery &amp; Strategy</option>
+            <option value="UI/UX Design">UI/UX Design</option>
+            <option value="Frontend Development">Frontend Development</option>
+            <option value="Backend &amp; Database">Backend &amp; Database</option>
+            <option value="Web3 &amp; Smart Contracts">Web3 &amp; Smart Contracts</option>
+            <option value="QA &amp; Testing">QA &amp; Testing</option>
+            <option value="Deployment &amp; DevOps">Deployment &amp; DevOps</option>
+            <option value="__custom__">Other (Custom)</option>
+          </select>
+        </div>
+
+        <!-- Dropdown 2: Common Features (populated by JS) -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-widest">Common Features</label>
+          <select id="featureSelect"
+            class="input-rose select-rose w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 transition-shadow appearance-none cursor-pointer pr-9">
+            <option value="">— pick a feature template —</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Custom Phase input (hidden unless "Other (Custom)" selected) -->
+      <div id="customPhaseWrap" class="hidden space-y-1.5">
+        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-widest">Custom Phase Name</label>
+        <input id="customPhase" type="text" placeholder="e.g. Data Science &amp; ML"
+          class="input-rose w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 transition-shadow" />
+      </div>
+
+      <!-- Row 2: Feature text input + Add button ──────────────────────────── -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-widest">
+          Specific Feature / Task
+          <span class="normal-case font-normal text-slate-400 dark:text-slate-600 ml-1">— edit the template or write your own</span>
+        </label>
+        <div class="flex gap-2">
+          <input id="featureInput" type="text" placeholder="e.g. User authentication with JWT"
+            class="input-rose flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 transition-shadow" />
+          <button id="addBtn"
+            class="shrink-0 px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-semibold text-sm transition-all duration-150 flex items-center gap-1.5 shadow-sm shadow-rose-700/20">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+            </svg>
+            Add
+          </button>
+        </div>
+        <p id="addError" class="hidden text-xs text-red-600 dark:text-red-400 pt-0.5"></p>
+      </div>
+
+      <!-- Live Scope Preview ──────────────────────────────────────────────── -->
+      <div id="previewWrap" class="hidden space-y-2">
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-widest">Live Scope Preview</label>
+          <button id="clearBtn" class="text-xs text-slate-400 dark:text-slate-600 hover:text-red-600 dark:hover:text-red-400 transition-colors">✕ Clear all</button>
+        </div>
+        <div class="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 overflow-hidden">
+          <div class="absolute left-0 top-0 bottom-0 w-10 bg-slate-100 dark:bg-slate-800/60 border-r border-slate-200 dark:border-slate-700/50"></div>
+          <pre id="scopePreview"
+            class="text-xs text-rose-700 dark:text-rose-400 leading-6 pl-12 pr-4 py-4 overflow-x-auto max-h-52 whitespace-pre"></pre>
+        </div>
+        <p id="scopeStats" class="text-xs text-slate-400 dark:text-slate-600"></p>
+      </div>
+    </section>
+
+    <!-- ── Compile Button ─────────────────────────────────────────────────────── -->
+    <button id="compileBtn"
+      class="w-full py-3.5 rounded-2xl bg-rose-600 hover:bg-rose-700 active:scale-[0.98]
+             text-white font-bold text-sm tracking-wide transition-all duration-150
+             flex items-center justify-center gap-2.5 shadow-md shadow-rose-700/25
+             disabled:opacity-40 disabled:cursor-not-allowed">
+      <span id="btnIcon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/>
+        </svg>
+      </span>
+      <span id="btnLabel">Compile SOW</span>
+    </button>
+
+    <!-- Global error banner -->
+    <div id="errorBanner" class="hidden text-sm text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl px-4 py-3 leading-relaxed"></div>
+
+    <!-- ── Results ────────────────────────────────────────────────────────────── -->
+    <div id="results" class="hidden space-y-5 fade-in">
+
+      <!-- Divider -->
+      <div class="flex items-center gap-3 pt-2">
+        <div class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+        <span class="text-xs text-slate-400 font-medium uppercase tracking-widest">Generated SOW</span>
+        <div class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+      </div>
+
+      <!-- AI Executive Summary ─────────────────────────────────────────────── -->
+      <section class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-none space-y-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="text-rose-500">✦</span>
+            <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">Executive Summary</h2>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <!-- Edit button -->
+            <button id="editSummaryBtn"
+              class="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-rose-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3 h-3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931z"/>
+              </svg>
+              Edit
+            </button>
+            <!-- Save button (hidden until editing) -->
+            <button id="saveSummaryBtn"
+              class="hidden flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold transition-colors">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-3 h-3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
+              </svg>
+              Save
+            </button>
+            <span class="text-xs px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20 font-medium">AI — Gemini 2.5 Flash</span>
+          </div>
+        </div>
+        <!-- Display view -->
+        <div id="aiSummary" class="text-sm text-slate-700 dark:text-slate-300 leading-7 whitespace-pre-line border-l-2 border-rose-300 dark:border-rose-600/50 pl-4"></div>
+        <!-- Edit view (hidden by default) -->
+        <textarea id="aiSummaryEdit" rows="7"
+          class="hidden input-rose w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-200 leading-7 resize-y transition-shadow"></textarea>
+      </section>
+
+      <!-- Financial Breakdown ──────────────────────────────────────────────── -->
+      <section class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-none space-y-5">
+        <div class="flex items-center gap-2">
+          <span class="text-rose-500">𝌭</span>
+          <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">Financial Breakdown</h2>
+          <span id="rateBadge" class="ml-auto text-xs px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600 font-medium">Deterministic · ₹100/hr · 18% tax</span>
+        </div>
+
+        <!-- Line Items Table -->
+        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-slate-50 dark:bg-slate-900/70 text-xs uppercase tracking-widest text-slate-500 dark:text-slate-500">
+                <th class="text-left px-4 py-3 font-medium w-8">#</th>
+                <th class="text-left px-4 py-3 font-medium">Feature / Task</th>
+                <th class="text-center px-4 py-3 font-medium">Depth</th>
+                <th class="text-right px-4 py-3 font-medium">Hrs</th>
+                <th class="text-right px-4 py-3 font-medium">Rate</th>
+                <th class="text-right px-4 py-3 font-medium">Total</th>
+                <th class="px-3 py-3 font-medium w-8"></th>
+              </tr>
+            </thead>
+            <tbody id="lineItemsBody" class="divide-y divide-slate-100 dark:divide-slate-700/40"></tbody>
+          </table>
+        </div>
+
+        <!-- Totals -->
+        <div class="flex justify-end pt-1">
+          <div class="w-full max-w-xs space-y-2">
+            <div class="flex justify-between text-sm text-slate-500 dark:text-slate-400">
+              <span>Total Hours</span>
+              <span id="totalHours" class="font-mono text-slate-800 dark:text-slate-200 font-medium"></span>
+            </div>
+            <div class="flex justify-between text-sm text-slate-500 dark:text-slate-400">
+              <span>Subtotal <span class="text-xs text-slate-400 dark:text-slate-600">(hrs × ₹100)</span></span>
+              <span id="subtotal" class="font-mono text-slate-800 dark:text-slate-200 font-medium"></span>
+            </div>
+            <div class="flex justify-between text-sm text-slate-500 dark:text-slate-400">
+              <span id="gstLabel">Tax (18%)</span>
+              <span id="gst" class="font-mono text-slate-800 dark:text-slate-200 font-medium"></span>
+            </div>
+            <div class="h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
+            <div class="flex justify-between text-base font-bold">
+              <span class="text-slate-800 dark:text-slate-100">Grand Total</span>
+              <span id="grandTotal" class="font-mono gradient-text text-lg"></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /results -->
+
+    <!-- ── Download SOW as PDF Button (hidden until results render) ─────────── -->
+    <button id="downloadPdfBtn"
+      class="hidden w-full py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 active:scale-[0.98]
+             text-white font-bold text-sm tracking-wide transition-all duration-150
+             flex items-center justify-center gap-2.5 border border-slate-700 dark:border-slate-600
+             shadow-md">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+      </svg>
+      Download SOW as PDF
+    </button>
+
+  </main>
+
+  <!-- ══ Off-screen Printable SOW Document (populated by JS, captured by html2pdf) ══ -->
+  <div id="sow-printable-document" class="hidden print:block print:absolute print:top-0 print:left-0 print:w-full print:bg-white print:text-black print:p-8">
+
+    <!-- ── Document Header Strip ── -->
+    <div id="pdf-doc-header" class="pdf-doc-header" style="display:none;">
+      <span id="pdf-header-left"></span>
+      <span id="pdf-header-right"></span>
+    </div>
+
+    <!-- ── Letterhead Header ── -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
+      <img id="pdf-logo" src="" alt="Agency Logo" style="max-height:56px; max-width:180px; display:none;" />
+      <div>
+        <h1 class="pdf-h1">Statement of Work</h1>
+        <p class="pdf-meta" id="pdf-date"></p>
+      </div>
+    </div>
+
+    <hr class="pdf-rule" />
+
+    <!-- ── Document Meta ── -->
+    <div style="margin-bottom:20px;">
+      <p class="pdf-meta">Prepared for: <strong id="pdf-client" style="color:#111827;"></strong></p>
+      <p class="pdf-meta">Project: <strong id="pdf-project" style="color:#111827;"></strong></p>
+    </div>
+
+    <!-- ── Salutation ── -->
+    <p class="pdf-body" id="pdf-salutation" style="margin-bottom:16px;"></p>
+
+    <!-- ── Executive Summary ── -->
+    <div class="pdf-h2">Executive Summary</div>
+    <p class="pdf-body" id="pdf-summary"></p>
+
+    <!-- ── Project Scope ── -->
+    <div class="pdf-h2">Project Scope</div>
+    <ul class="pdf-scope-list" id="pdf-scope-list"></ul>
+
+    <!-- ── Financial Summary ── -->
+    <div class="pdf-h2">Financial Summary</div>
+    <table class="pdf-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Feature / Task</th>
+          <th style="text-align:right;">Hrs</th>
+          <th style="text-align:right;">Rate</th>
+          <th style="text-align:right;">Total</th>
+        </tr>
+      </thead>
+      <tbody id="pdf-line-items"></tbody>
+      <tfoot>
+        <tr><td colspan="4" style="padding:10px 10px 4px; font-size:11px; color:#6b7280;">Total Hours</td>
+            <td class="right" id="pdf-total-hours" style="padding:10px 10px 4px;"></td></tr>
+        <tr><td colspan="4" style="padding:4px 10px; font-size:11px; color:#6b7280;">Subtotal</td>
+            <td class="right" id="pdf-subtotal" style="padding:4px 10px;"></td></tr>
+        <tr><td colspan="4" style="padding:4px 10px; font-size:11px; color:#6b7280;" id="pdf-tax-label">Tax (18%)</td>
+            <td class="right" id="pdf-tax" style="padding:4px 10px;"></td></tr>
+        <tr class="total-row">
+          <td colspan="4" style="padding:10px;">Grand Total</td>
+          <td class="right" id="pdf-grand-total" style="padding:10px; color:#be123c !important;"></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <!-- ── Sign-off ── -->
+    <div class="pdf-signoff">
+      <p>Best Regards,</p>
+      <p class="pdf-agency" id="pdf-agency"></p>
+    </div>
+
+    <!-- ── Document Footer Strip (dynamic, from user input) ── -->
+    <div id="pdf-doc-footer" class="pdf-doc-footer" style="display:none;">
+      <span id="pdf-footer-left"></span>
+      <span id="pdf-footer-right"></span>
+    </div>
+
+    <!-- ── Static Company Footer ── -->
+    <div class="text-xs text-gray-500 text-center mt-10 pt-5 border-t border-gray-300">
+      Contact: Support@Fitechs.in | Mobile: +91-7909078233<br />
+      Reg Office: Fi Tech A 505/505 beside marigold Hill view, Bavdhan, Pune Maharashtra India, 411021.<br />
+      © 2026 Fi Tech. All rights reserved.
+    </div>
+
+  </div><!-- /sow-printable-document -->
+
+  <!-- ══ Footer ══════════════════════════════════════════════════════════════════ -->
+  <footer class="print:hidden border-t border-slate-200 dark:border-slate-800 mt-16 py-6 text-center text-xs text-slate-400 dark:text-slate-700">
+    ScopeSynth OS · SOW Builder · BYOK Gemini 2.5 Flash · Deterministic AST Math · <a href="/dashboard.html" class="underline hover:text-rose-400">← Back to CRM</a>
+  </footer>
+
+  <!-- ══ Script ══════════════════════════════════════════════════════════════════ -->
+  <script>
+    'use strict';
+
+    // ── URL-param pre-fill: ?client=NAME (when opened from CRM dashboard) ────────
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const raw    = params.get('client');
+      if (!raw) return;
+      const name   = decodeURIComponent(raw);
+      // Pre-fill as soon as the DOM is ready
+      window.addEventListener('DOMContentLoaded', () => {
+        const inp = document.getElementById('clientName');
+        if (inp && !inp.value.trim()) inp.value = name;
+        const banner = document.getElementById('clientParamBanner');
+        const text   = document.getElementById('clientParamText');
+        if (banner && text) {
+          text.textContent = 'SOW pre-filled for client: ' + name;
+          banner.classList.remove('hidden');
+        }
+      });
+    })();
+
+    // ── DOM refs ─────────────────────────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
+    const els = {
+      apiKey:          $('apiKey'),
+      toggleKey:       $('toggleKey'),
+      rememberKey:     $('rememberKey'),
+      themeToggle:     $('themeToggle'),
+      phaseSelect:     $('phaseSelect'),
+      featureSelect:   $('featureSelect'),
+      customPhaseWrap: $('customPhaseWrap'),
+      customPhase:     $('customPhase'),
+      featureInput:    $('featureInput'),
+      addBtn:          $('addBtn'),
+      addError:        $('addError'),
+      previewWrap:     $('previewWrap'),
+      scopePreview:    $('scopePreview'),
+      scopeStats:      $('scopeStats'),
+      clearBtn:        $('clearBtn'),
+      compileBtn:      $('compileBtn'),
+      btnIcon:         $('btnIcon'),
+      btnLabel:        $('btnLabel'),
+      errorBanner:     $('errorBanner'),
+      results:         $('results'),
+      aiSummary:       $('aiSummary'),
+      lineItemsBody:   $('lineItemsBody'),
+      totalHours:           $('totalHours'),
+      subtotal:             $('subtotal'),
+      gst:                  $('gst'),
+      grandTotal:           $('grandTotal'),
+      baseRate:             $('baseRate'),
+      taxRate:              $('taxRate'),
+      multiplier:           $('multiplier'),
+      effectiveRatePreview: $('effectiveRatePreview'),
+      // Executive Summary Engine
+      modeManual:    $('modeManual'),
+      modeAI:        $('modeAI'),
+      manualPanel:   $('manualPanel'),
+      aiPanel:       $('aiPanel'),
+      manualSummary: $('manualSummary'),
+      aiContext:     $('aiContext'),
+      // Document Settings
+      clientName:    $('clientName'),
+      projectName:   $('projectName'),
+      agencyName:    $('agencyName'),
+      pdfHeaderText: $('pdfHeaderText'),
+      pdfFooterText: $('pdfFooterText'),
+      letterheadUrl:         $('letterheadUrl'),
+      letterheadFile:        $('letterheadFile'),
+      letterheadPreviewWrap: $('letterheadPreviewWrap'),
+      letterheadPreview:     $('letterheadPreview'),
+      clearLetterhead:       $('clearLetterhead'),
+      // PDF controls
+      downloadPdfBtn: $('downloadPdfBtn'),
+      // PDF template slots
+      pdfLogo:        $('pdf-logo'),
+      pdfDate:        $('pdf-date'),
+      pdfClient:      $('pdf-client'),
+      pdfProject:     $('pdf-project'),
+      pdfSalutation:  $('pdf-salutation'),
+      pdfSummary:     $('pdf-summary'),
+      pdfScopeList:   $('pdf-scope-list'),
+      pdfLineItems:   $('pdf-line-items'),
+      pdfTotalHours:  $('pdf-total-hours'),
+      pdfSubtotal:    $('pdf-subtotal'),
+      pdfTaxLabel:    $('pdf-tax-label'),
+      pdfTax:         $('pdf-tax'),
+      pdfGrandTotal:  $('pdf-grand-total'),
+      pdfAgency:      $('pdf-agency'),
+      pdfDocHeader:   $('pdf-doc-header'),
+      pdfHeaderLeft:  $('pdf-header-left'),
+      pdfHeaderRight: $('pdf-header-right'),
+      pdfDocFooter:    $('pdf-doc-footer'),
+      pdfFooterLeft:   $('pdf-footer-left'),
+      pdfFooterRight:  $('pdf-footer-right'),
+      // Edit/delete controls
+      editSummaryBtn:  $('editSummaryBtn'),
+      saveSummaryBtn:  $('saveSummaryBtn'),
+      aiSummaryEdit:   $('aiSummaryEdit'),
+    };
+
+    // ── Mutable copy of financialData (mutated by delete actions) ────────────────
+    let currentFinancialData = null;
+
+    // ── Edit / Save AI Summary ────────────────────────────────────────────────────
+    els.editSummaryBtn.addEventListener('click', () => {
+      els.aiSummaryEdit.value = els.aiSummary.textContent;
+      els.aiSummary.classList.add('hidden');
+      els.aiSummaryEdit.classList.remove('hidden');
+      els.editSummaryBtn.classList.add('hidden');
+      els.saveSummaryBtn.classList.remove('hidden');
+      els.aiSummaryEdit.focus();
+    });
+
+    els.saveSummaryBtn.addEventListener('click', () => {
+      const updated = els.aiSummaryEdit.value.trim();
+      els.aiSummary.textContent = updated;
+      els.aiSummary.classList.remove('hidden');
+      els.aiSummaryEdit.classList.add('hidden');
+      els.saveSummaryBtn.classList.add('hidden');
+      els.editSummaryBtn.classList.remove('hidden');
+      // Push updated text into the PDF template
+      if (els.pdfSummary) els.pdfSummary.textContent = updated;
+    });
+
+    // ── Executive Summary Engine toggle ──────────────────────────────────────────
+    function applySummaryMode() {
+      const isAI = els.modeAI.checked;
+      els.manualPanel.classList.toggle('hidden', isAI);
+      els.aiPanel.classList.toggle('hidden', !isAI);
+    }
+    els.modeManual.addEventListener('change', applySummaryMode);
+    els.modeAI.addEventListener('change', applySummaryMode);
+    applySummaryMode(); // init on load
+
+    // ── Letterhead local upload (FileReader → base64 data URL) ───────────────────
+    let letterheadDataUrl = null; // set when user uploads a file; takes priority over URL input
+
+    els.letterheadFile.addEventListener('change', () => {
+      const file = els.letterheadFile.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        letterheadDataUrl = e.target.result;
+        // Show preview
+        els.letterheadPreview.src = letterheadDataUrl;
+        els.letterheadPreviewWrap.classList.remove('hidden');
+        // Clear the URL field to avoid ambiguity
+        els.letterheadUrl.value = '';
+      };
+      reader.readAsDataURL(file);
+    });
+
+    els.clearLetterhead.addEventListener('click', () => {
+      letterheadDataUrl = null;
+      els.letterheadFile.value = '';
+      els.letterheadPreview.src = '';
+      els.letterheadPreviewWrap.classList.add('hidden');
+    });
+
+    // ── Effective Rate preview (live) ─────────────────────────────────────────────
+    function updateEffectiveRate() {
+      const base = parseFloat(els.baseRate.value) || 0;
+      const mul  = parseFloat(els.multiplier.value) || 1;
+      const eff  = (base * mul).toFixed(2);
+      els.effectiveRatePreview.textContent = `₹${Number(eff).toLocaleString('en-IN', { minimumFractionDigits: 2 })} / hr`;
+    }
+
+    els.baseRate.addEventListener('input',  updateEffectiveRate);
+    els.multiplier.addEventListener('change', updateEffectiveRate);
+    updateEffectiveRate(); // init on load
+
+    // ── Theme toggle ──────────────────────────────────────────────────────────────
+    els.themeToggle.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('scopesynth_theme', isDark ? 'dark' : 'light');
+    });
+
+    // ── Remember Me — restore saved key on load ──────────────────────────────────
+    const LS_KEY = 'scopesynth_gemini_key';
+    (function restoreKey() {
+      const saved = localStorage.getItem(LS_KEY);
+      if (saved) { els.apiKey.value = saved; els.rememberKey.checked = true; }
+    })();
+
+    els.rememberKey.addEventListener('change', () => {
+      if (els.rememberKey.checked) {
+        if (els.apiKey.value.trim()) localStorage.setItem(LS_KEY, els.apiKey.value.trim());
+      } else {
+        localStorage.removeItem(LS_KEY);
+      }
+    });
+
+    els.apiKey.addEventListener('input', () => {
+      if (els.rememberKey.checked) {
+        const v = els.apiKey.value.trim();
+        v ? localStorage.setItem(LS_KEY, v) : localStorage.removeItem(LS_KEY);
+      }
+    });
+
+    // ── Toggle API key visibility ─────────────────────────────────────────────────
+    els.toggleKey.addEventListener('click', () => {
+      els.apiKey.type = els.apiKey.type === 'password' ? 'text' : 'password';
+    });
+
+    // ── Cascading Dropdown Dictionary ─────────────────────────────────────────────
+    const PHASE_FEATURES = {
+      'Discovery & Strategy': [
+        'Stakeholder Interviews',
+        'Requirements Gathering',
+        'Competitive Analysis',
+        'User Research & Personas',
+        'Project Roadmap Definition',
+        'Technical Feasibility Study',
+        'Information Architecture',
+      ],
+      'UI/UX Design': [
+        'Wireframing',
+        'Design System Creation',
+        'Interactive Prototyping',
+        'User Journey Mapping',
+        'Responsive Design',
+        'Accessibility Audit',
+        'Visual Identity & Branding',
+      ],
+      'Frontend Development': [
+        'Authentication Flow',
+        'Dashboard UI',
+        'Landing Page',
+        'Component Library',
+        'State Management Setup',
+        'API Integration Layer',
+        'Performance Optimization',
+      ],
+      'Backend & Database': [
+        'REST API Development',
+        'Database Schema Design',
+        'Authentication & Authorization',
+        'Third-party API Integration',
+        'Caching Layer',
+        'Background Job Processing',
+        'Admin Panel Backend',
+      ],
+      'Web3 & Smart Contracts': [
+        'Smart Contract Development',
+        'Wallet Integration',
+        'Token Economics Design',
+        'Contract Security Audit',
+        'IPFS / Decentralized Storage',
+        'DApp Frontend',
+        'Gas Optimization',
+      ],
+      'QA & Testing': [
+        'Unit Test Suite',
+        'Integration Testing',
+        'End-to-End Testing',
+        'Performance & Load Testing',
+        'Security Penetration Test',
+        'UAT Documentation',
+        'Bug Triage & Reporting',
+      ],
+      'Deployment & DevOps': [
+        'CI/CD Pipeline Setup',
+        'Cloud Infrastructure Provisioning',
+        'Docker Containerization',
+        'Monitoring & Alerting',
+        'SSL & Domain Configuration',
+        'Backup & Disaster Recovery',
+        'Zero-Downtime Deployment',
+      ],
+    };
+
+    // Populate featureSelect based on selected phase
+    function populateFeatureDropdown(phase) {
+      const options = PHASE_FEATURES[phase] || [];
+      els.featureSelect.innerHTML = '';
+
+      if (options.length === 0) {
+        // Custom phase — no templates
+        const placeholder = new Option('— type your own below —', '');
+        placeholder.disabled = true;
+        els.featureSelect.appendChild(placeholder);
+        els.featureSelect.disabled = true;
+      } else {
+        els.featureSelect.disabled = false;
+        const placeholder = new Option('— pick a feature template —', '');
+        placeholder.disabled = true;
+        els.featureSelect.appendChild(placeholder);
+        options.forEach(opt => els.featureSelect.appendChild(new Option(opt, opt)));
+      }
+      els.featureSelect.selectedIndex = 0;
+    }
+
+    // Init dropdown with first phase on load
+    populateFeatureDropdown(els.phaseSelect.value);
+
+    // ── Phase dropdown change ─────────────────────────────────────────────────────
+    els.phaseSelect.addEventListener('change', () => {
+      const val      = els.phaseSelect.value;
+      const isCustom = val === '__custom__';
+      els.customPhaseWrap.classList.toggle('hidden', !isCustom);
+      if (isCustom) els.customPhase.focus();
+      populateFeatureDropdown(val);
+      els.featureInput.value = '';
+    });
+
+    // ── Auto-fill bridge: featureSelect → featureInput ────────────────────────────
+    els.featureSelect.addEventListener('change', () => {
+      const val = els.featureSelect.value;
+      if (val) {
+        els.featureInput.value = val;
+        els.featureInput.focus();
+        // Place cursor at end
+        const len = els.featureInput.value.length;
+        els.featureInput.setSelectionRange(len, len);
+      }
+    });
+
+    // ── Scope state ───────────────────────────────────────────────────────────────
+    let scopeItems = []; // [{ phase, features: [] }]
+
+    function buildMarkdown() {
+      return scopeItems
+        .map(({ phase, features }) => `- ${phase}\n` + features.map(f => `  - ${f}`).join('\n'))
+        .join('\n');
+    }
+
+    function renderPreview() {
+      const md = buildMarkdown();
+      if (!md) { els.previewWrap.classList.add('hidden'); return; }
+      els.previewWrap.classList.remove('hidden');
+      els.scopePreview.textContent = md;
+      const phases   = scopeItems.length;
+      const features = scopeItems.reduce((s, p) => s + p.features.length, 0);
+      els.scopeStats.textContent = `${phases} phase${phases !== 1 ? 's' : ''} · ${features} feature${features !== 1 ? 's' : ''}`;
+    }
+
+    // ── Add to Scope ──────────────────────────────────────────────────────────────
+    els.addBtn.addEventListener('click', () => {
+      els.addError.classList.add('hidden');
+      const isCustom = els.phaseSelect.value === '__custom__';
+      const phase    = isCustom ? els.customPhase.value.trim() : els.phaseSelect.value;
+      const feature  = els.featureInput.value.trim();
+
+      if (!phase)   { showAddError('Please enter a custom phase name.'); return; }
+      if (!feature) { showAddError('Please enter a feature or task.'); return; }
+
+      const existing = scopeItems.find(p => p.phase === phase);
+      if (existing) existing.features.push(feature);
+      else scopeItems.push({ phase, features: [feature] });
+
+      els.featureInput.value = '';
+      // Reset featureSelect placeholder
+      if (els.featureSelect.options.length > 0) els.featureSelect.selectedIndex = 0;
+      els.featureInput.focus();
+      renderPreview();
+    });
+
+    els.featureInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); els.addBtn.click(); }
+    });
+
+    els.clearBtn.addEventListener('click', () => {
+      scopeItems = [];
+      renderPreview();
+      els.results.classList.add('hidden');
+    });
+
+    // ── Compile SOW ───────────────────────────────────────────────────────────────
+    els.compileBtn.addEventListener('click', async () => {
+      els.errorBanner.classList.add('hidden');
+      els.results.classList.add('hidden');
+
+      const apiKey       = els.apiKey.value.trim();
+      const markdownText = buildMarkdown();
+      const baseRate     = parseFloat(els.baseRate.value);
+      const taxRate      = parseFloat(els.taxRate.value);
+      const multiplier   = parseFloat(els.multiplier.value);
+
+      const mode        = els.modeAI.checked ? 'ai' : 'manual';
+      const summaryText = els.manualSummary.value.trim();
+      const aiContext   = els.aiContext.value.trim();
+
+      if (mode === 'ai' && !apiKey)       { showGlobalError('Please enter your Gemini API key for AI generation.'); return; }
+      if (mode === 'manual' && !summaryText) { showGlobalError('Please write your executive summary before compiling.'); return; }
+      if (!markdownText) { showGlobalError('Your scope is empty — add at least one feature before compiling.'); return; }
+      if (!apiKey && mode === 'ai') { showGlobalError('Please enter your Gemini API key.'); return; }
+      if (isNaN(baseRate)   || baseRate <= 0)   { showGlobalError('Base hourly rate must be a positive number.'); return; }
+      if (isNaN(taxRate)    || taxRate < 0)     { showGlobalError('Tax rate must be 0 or higher.'); return; }
+      if (isNaN(multiplier) || multiplier <= 0) { showGlobalError('Team allocation multiplier is invalid.'); return; }
+
+      setLoading(true);
+      try {
+        const res  = await fetch('/api/compile-sow', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ markdownText, apiKey, baseRate, taxRate, multiplier, mode, summaryText, aiContext }),
+        });
+        const data = await res.json();
+        if (!res.ok) { showGlobalError(data.detail || data.error || `Server error ${res.status}`); return; }
+        renderResults(data);
+      } catch {
+        showGlobalError('Network error — could not reach the server.');
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    // ── Render results ────────────────────────────────────────────────────────────
+    const DEPTH_LABEL  = { 0: 'Phase', 1: 'Feature', 2: 'Detail' };
+    const DEPTH_LIGHT  = {
+      0: 'bg-rose-50 text-rose-700 border-rose-200',
+      1: 'bg-red-50 text-red-600 border-red-200',
+      2: 'bg-slate-100 text-slate-500 border-slate-300',
+    };
+    const DEPTH_DARK   = {
+      0: 'dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30',
+      1: 'dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/30',
+      2: 'dark:bg-slate-600/30 dark:text-slate-400 dark:border-slate-500/30',
+    };
+    const DEPTH_INDENT = { 0: '', 1: 'pl-5', 2: 'pl-10' };
+
+    // Recalculate totals from surviving line items and update UI + PDF
+    function recalcFinancials() {
+      const f        = currentFinancialData.financials;
+      const items    = currentFinancialData.lineItems;
+      const totalHrs = items.reduce((s, i) => s + i.hours, 0);
+      const subtotal = parseFloat((totalHrs * f.effectiveRate).toFixed(2));
+      const tax      = parseFloat((subtotal * (f.taxRate / 100)).toFixed(2));
+      const grand    = parseFloat((subtotal + tax).toFixed(2));
+
+      // Mutate in place so populatePDF reads the fresh values
+      f.totalHours = totalHrs;
+      f.subtotal   = subtotal;
+      f.tax        = tax;
+      f.grandTotal = grand;
+
+      // Update UI totals
+      els.totalHours.textContent = totalHrs + ' hrs';
+      els.subtotal.textContent   = fmt(subtotal);
+      els.gst.textContent        = fmt(tax);
+      els.grandTotal.textContent = fmt(grand);
+
+      // Update PDF template totals
+      els.pdfTotalHours.textContent = totalHrs + ' hrs';
+      els.pdfSubtotal.textContent   = fmt(subtotal);
+      els.pdfTax.textContent        = fmt(tax);
+      els.pdfGrandTotal.textContent = fmt(grand);
+
+      // Rebuild PDF line items
+      els.pdfLineItems.innerHTML = '';
+      items.forEach(item => {
+        const indent = item.depth === 1 ? 'padding-left:16px;' : item.depth === 2 ? 'padding-left:28px;' : '';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="padding:6px 10px; color:#9ca3af; font-size:11px;">${item.id}</td>
+          <td style="padding:6px 10px; ${indent}">${esc(item.text)}</td>
+          <td class="right">${item.hours}</td>
+          <td class="right">₹${item.ratePerHour}</td>
+          <td class="right">${fmt(item.lineTotal)}</td>
+        `;
+        els.pdfLineItems.appendChild(tr);
+      });
+    }
+
+    // Build/rebuild the UI line-items table from currentFinancialData
+    function redrawLineItems() {
+      els.lineItemsBody.innerHTML = '';
+      currentFinancialData.lineItems.forEach((item, idx) => {
+        const label       = DEPTH_LABEL[item.depth]  ?? 'Deep';
+        const lightCls    = DEPTH_LIGHT[item.depth]  ?? DEPTH_LIGHT[2];
+        const darkCls     = DEPTH_DARK[item.depth]   ?? DEPTH_DARK[2];
+        const indentClass = DEPTH_INDENT[item.depth] ?? DEPTH_INDENT[2];
+
+        const tr = document.createElement('tr');
+        tr.className = 'sow-row transition-colors';
+        tr.innerHTML = `
+          <td class="px-4 py-3 text-slate-400 dark:text-slate-600 text-xs font-mono">${item.id}</td>
+          <td class="px-4 py-3 text-slate-700 dark:text-slate-300 text-sm ${indentClass}">${esc(item.text)}</td>
+          <td class="px-4 py-3 text-center">
+            <span class="depth-pill ${lightCls} ${darkCls}">${label}</span>
+          </td>
+          <td class="px-4 py-3 text-right font-mono text-slate-700 dark:text-slate-300 text-sm">${item.hours}</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-400 dark:text-slate-600 text-xs">₹${item.ratePerHour}</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-800 dark:text-slate-200 text-sm font-medium">${fmt(item.lineTotal)}</td>
+          <td class="px-3 py-3 text-center">
+            <button data-idx="${idx}" class="delete-row-btn w-6 h-6 rounded-lg flex items-center justify-center text-slate-300 dark:text-slate-600 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-400 transition-colors" title="Remove from PDF">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-3.5 h-3.5 pointer-events-none">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </td>
+        `;
+        els.lineItemsBody.appendChild(tr);
+      });
+    }
+
+    // Delegate delete clicks on the tbody
+    els.lineItemsBody.addEventListener('click', e => {
+      const btn = e.target.closest('.delete-row-btn');
+      if (!btn || !currentFinancialData) return;
+      const idx = parseInt(btn.dataset.idx, 10);
+      currentFinancialData.lineItems.splice(idx, 1);
+      redrawLineItems();
+      recalcFinancials();
+    });
+
+    function renderResults({ aiSummary, financialData }) {
+      // Deep-clone so mutations don't affect the original response
+      currentFinancialData = JSON.parse(JSON.stringify(financialData));
+
+      // Reset edit mode on new compile
+      els.aiSummary.textContent = aiSummary;
+      els.aiSummary.classList.remove('hidden');
+      els.aiSummaryEdit.classList.add('hidden');
+      els.editSummaryBtn.classList.remove('hidden');
+      els.saveSummaryBtn.classList.add('hidden');
+
+      redrawLineItems();
+
+      const f = currentFinancialData.financials;
+      els.totalHours.textContent = f.totalHours + ' hrs';
+      els.subtotal.textContent   = fmt(f.subtotal);
+      const gstLabelEl = document.getElementById('gstLabel');
+      if (gstLabelEl) gstLabelEl.textContent = `Tax (${f.taxRate}%)`;
+      els.gst.textContent        = fmt(f.tax);
+      els.grandTotal.textContent = fmt(f.grandTotal);
+      const rateBadgeEl = document.getElementById('rateBadge');
+      if (rateBadgeEl) rateBadgeEl.textContent = `Deterministic · ₹${f.effectiveRate}/hr · ${f.taxRate}% tax`;
+
+      els.results.classList.remove('hidden', 'fade-in');
+      void els.results.offsetWidth;
+      els.results.classList.add('fade-in');
+      els.results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // ── Populate the off-screen PDF template ─────────────────────────────────
+      populatePDF({ aiSummary, financialData: currentFinancialData });
+    }
+
+    // ── Populate PDF Template ─────────────────────────────────────────────────────
+    function populatePDF({ aiSummary, financialData }) {
+      const clientName    = els.clientName.value.trim()    || 'Valued Client';
+      const projectName   = els.projectName.value.trim()   || 'Untitled Project';
+      const agencyName    = els.agencyName.value.trim()    || 'Our Agency';
+      // Local upload takes priority; fall back to pasted URL
+      const resolvedLogoSrc = letterheadDataUrl || els.letterheadUrl.value.trim();
+
+      // Header
+      if (resolvedLogoSrc) {
+        els.pdfLogo.src   = resolvedLogoSrc;
+        els.pdfLogo.style.display = 'block';
+      } else {
+        els.pdfLogo.style.display = 'none';
+      }
+      els.pdfDate.textContent    = new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
+      els.pdfClient.textContent  = clientName;
+      els.pdfProject.textContent = projectName;
+
+      // Salutation & summary
+      els.pdfSalutation.textContent = `Dear ${clientName},`;
+      els.pdfSummary.textContent    = aiSummary;
+
+      // Scope — render from scopeItems as nested list
+      els.pdfScopeList.innerHTML = '';
+      scopeItems.forEach(({ phase, features }) => {
+        const li = document.createElement('li');
+        li.className = 'pdf-phase-item';
+        li.textContent = '▸  ' + phase;
+        const ul = document.createElement('ul');
+        ul.style.listStyle = 'none';
+        ul.style.padding = '0';
+        features.forEach(f => {
+          const fi = document.createElement('li');
+          fi.className = 'pdf-feature-item';
+          fi.textContent = f;
+          ul.appendChild(fi);
+        });
+        li.appendChild(ul);
+        els.pdfScopeList.appendChild(li);
+      });
+
+      // Financial line items
+      els.pdfLineItems.innerHTML = '';
+      financialData.lineItems.forEach(item => {
+        const indent = item.depth === 1 ? 'padding-left:16px;' : item.depth === 2 ? 'padding-left:28px;' : '';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="padding:6px 10px; color:#9ca3af; font-size:11px;">${item.id}</td>
+          <td style="padding:6px 10px; ${indent}">${esc(item.text)}</td>
+          <td class="right">${item.hours}</td>
+          <td class="right">₹${item.ratePerHour}</td>
+          <td class="right">${fmt(item.lineTotal)}</td>
+        `;
+        els.pdfLineItems.appendChild(tr);
+      });
+
+      // Totals
+      const f = financialData.financials;
+      els.pdfTotalHours.textContent  = f.totalHours + ' hrs';
+      els.pdfSubtotal.textContent    = fmt(f.subtotal);
+      els.pdfTaxLabel.textContent    = `Tax (${f.taxRate}%)`;
+      els.pdfTax.textContent         = fmt(f.tax);
+      els.pdfGrandTotal.textContent  = fmt(f.grandTotal);
+
+      // Sign-off
+      els.pdfAgency.textContent = agencyName;
+
+      // ── Header strip ──────────────────────────────────────────────────────────
+      const headerRaw = els.pdfHeaderText.value.trim();
+      if (headerRaw) {
+        const [hLeft, hRight = ''] = headerRaw.split('|').map(s => s.trim());
+        els.pdfHeaderLeft.textContent  = hLeft;
+        els.pdfHeaderRight.textContent = hRight;
+        els.pdfDocHeader.style.display = 'flex';
+      } else {
+        els.pdfDocHeader.style.display = 'none';
+      }
+
+      // ── Footer strip ──────────────────────────────────────────────────────────
+      const footerRaw = els.pdfFooterText.value.trim();
+      if (footerRaw) {
+        const [fLeft, fRight = ''] = footerRaw.split('|').map(s => s.trim());
+        els.pdfFooterLeft.textContent  = fLeft;
+        // If no right side provided, show the generation date as default right content
+        els.pdfFooterRight.textContent = fRight || new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
+        els.pdfDocFooter.style.display = 'flex';
+      } else {
+        els.pdfDocFooter.style.display = 'none';
+      }
+
+      // Show the download button
+      els.downloadPdfBtn.classList.remove('hidden');
+    }
+
+    // ── Print / Save as PDF — native browser print dialog ────────────────────────
+    els.downloadPdfBtn.addEventListener('click', () => {
+      window.print();
+    });
+
+    // ── Helpers ───────────────────────────────────────────────────────────────────
+    function showAddError(msg) {
+      els.addError.textContent = '⚠ ' + msg;
+      els.addError.classList.remove('hidden');
+    }
+    function showGlobalError(msg) {
+      els.errorBanner.innerHTML = '⚠ ' + esc(msg);
+      els.errorBanner.classList.remove('hidden');
+    }
+
+    const SPINNER_SVG = `<svg class="spinner w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity="0.2"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg>`;
+    const BOLT_SVG    = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>`;
+
+    function setLoading(on) {
+      els.compileBtn.disabled  = on;
+      els.btnIcon.innerHTML    = on ? SPINNER_SVG : BOLT_SVG;
+      els.btnLabel.textContent = on ? 'Compiling…' : 'Compile SOW';
+    }
+
+    function fmt(n) {
+      return '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function esc(str) {
+      return String(str).replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
+      );
+    }
+  </script>
+</body>
+</html>

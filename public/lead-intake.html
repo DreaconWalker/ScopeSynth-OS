@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lead Intake Agent — ScopeSynth OS</title>
+  <script>(function(){var s=localStorage.getItem('scopesynth_theme')||'dark';document.documentElement.classList.toggle('dark',s==='dark');})();</script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;height:100vh;display:flex;flex-direction:column;transition:background .2s,color .2s}
+    html:not(.dark) body{background:#f8fafc;color:#0f172a}
+    html:not(.dark) header{background:#fff;border-color:#e2e8f0}
+    html:not(.dark) .header-text h1{color:#0f172a}
+    html:not(.dark) .header-text .sub{color:#64748b}
+    html:not(.dark) .modal{background:#fff;border-color:#e2e8f0}
+    html:not(.dark) .modal h2{color:#0f172a}
+    html:not(.dark) .modal label{color:#64748b}
+    html:not(.dark) .modal input,.modal select{background:#f1f5f9;border-color:#e2e8f0;color:#0f172a}
+    html:not(.dark) .link-btn{color:#64748b;border-color:#e2e8f0}
+    html:not(.dark) .chat-footer{background:#fff;border-color:#e2e8f0}
+    html:not(.dark) #msg-input{background:#f1f5f9;border-color:#e2e8f0;color:#0f172a}
+    html:not(.dark) .bubble{background:#fff;border-color:#e2e8f0;color:#0f172a}
+    html:not(.dark) .msg.user .bubble{background:#eff6ff;border-color:#bfdbfe}
+    html:not(.dark) .typing{background:#fff;border-color:#e2e8f0}
+    html:not(.dark) .msg.user .avatar{background:#e2e8f0;color:#475569}
+    html:not(.dark) #themeToggle{border-color:#e2e8f0;color:#64748b}
+    .modal-overlay{position:fixed;inset:0;background:#00000090;z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+    .modal{background:#1e293b;border:1px solid #334155;border-radius:16px;padding:32px;width:460px;max-width:92vw;display:flex;flex-direction:column;gap:18px}
+    .modal h2{font-size:18px;font-weight:800;color:#f1f5f9}
+    .modal label{font-size:12px;color:#94a3b8;display:block;margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px}
+    .modal input,.modal select{width:100%;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px 14px;color:#e2e8f0;font-size:14px;outline:none}
+    .modal input:focus,.modal select:focus{border-color:#e11d48}
+    .modal-btn{background:#e11d48;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;width:100%}
+    .modal-btn:hover{background:#be123c}
+    header{background:#1e293b;border-bottom:1px solid #334155;padding:14px 22px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+    .logo{width:36px;height:36px;background:#e11d48;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff}
+    .header-text h1{font-size:16px;font-weight:700;color:#f1f5f9}
+    .header-text .sub{font-size:11px;color:#94a3b8;margin-top:2px}
+    .header-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+    .badge{background:#e11d4818;color:#e11d48;border:1px solid #e11d4830;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+    a.link-btn{color:#94a3b8;text-decoration:none;font-size:12px;padding:5px 12px;border:1px solid #334155;border-radius:8px}
+    a.link-btn:hover{border-color:#e11d48;color:#e11d48}
+    #chat{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px}
+    .msg{display:flex;gap:10px;max-width:680px}
+    .msg.user{flex-direction:row-reverse;margin-left:auto}
+    .avatar{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+    .msg.agent .avatar{background:#e11d48;color:#fff}
+    .msg.user .avatar{background:#334155;color:#94a3b8}
+    .bubble{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:13px 16px;font-size:14px;line-height:1.7;max-width:560px;white-space:pre-wrap}
+    .msg.user .bubble{background:#1e3a5f;border-color:#1e40af}
+    .typing{display:flex;gap:6px;padding:13px 16px;background:#1e293b;border:1px solid #334155;border-radius:12px;width:fit-content}
+    .typing span{width:7px;height:7px;background:#e11d48;border-radius:50%;animation:bounce 1.2s infinite}
+    .typing span:nth-child(2){animation-delay:.2s}
+    .typing span:nth-child(3){animation-delay:.4s}
+    @keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}}
+    .done-banner{background:#0f2e1a;border:1px solid #16a34a;color:#86efac;padding:16px 20px;border-radius:12px;font-size:13px;}
+    .done-banner .done-title{margin-bottom:10px;font-weight:700;font-size:14px;}
+    .done-banner .done-summary{font-size:12px;color:#86efac;opacity:.95;margin-bottom:14px;line-height:1.5;}
+    .done-banner .done-summary span{display:block;margin-top:2px;}
+    .done-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+    .done-actions a,.done-actions button{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;cursor:pointer;border:none;transition:all .2s;}
+    .done-actions .btn-crm{background:#16a34a;color:#fff;}
+    .done-actions .btn-crm:hover{background:#15803d;}
+    .done-actions .btn-link{background:rgba(255,255,255,.15);color:#86efac;border:1px solid #16a34a60;}
+    .done-actions .btn-link:hover{background:rgba(255,255,255,.25);}
+    html:not(.dark) .done-banner{background:#ecfdf5;border-color:#22c55e;color:#166534;}
+    html:not(.dark) .done-banner .done-summary{color:#15803d;}
+    html:not(.dark) .done-actions .btn-link{background:#dcfce7;color:#166534;border-color:#22c55e60;}
+    html:not(.dark) .done-actions .btn-link:hover{background:#bbf7d0;}
+    .chat-footer{background:#1e293b;border-top:1px solid #334155;padding:14px 22px;display:flex;gap:10px;flex-shrink:0}
+    #msg-input{flex:1;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:11px 14px;color:#e2e8f0;font-size:14px;outline:none}
+    #msg-input:focus{border-color:#e11d48}
+    #send-btn{background:#e11d48;color:#fff;border:none;border-radius:10px;padding:11px 22px;font-size:14px;font-weight:600;cursor:pointer}
+    #send-btn:hover{background:#be123c}
+    #send-btn:disabled{background:#334155;color:#64748b;cursor:not-allowed}
+  </style>
+</head>
+<body>
+
+<div class="modal-overlay" id="config-modal">
+  <div class="modal">
+    <h2>⚙️ Configure Lead Intake Agent</h2>
+    <div>
+      <label>Gemini API Key (BYOK)</label>
+      <input type="password" id="cfg-apikey" placeholder="AIza..."/>
+    </div>
+    <div>
+      <label>Company / Organisation Name</label>
+      <input type="text" id="cfg-company" placeholder="e.g. Acme Corp, Fi Techs"/>
+    </div>
+    <div>
+      <label>Industry / Sector</label>
+      <select id="cfg-sector">
+        <option value="AI & Software Agency">AI & Software Agency</option>
+        <option value="Healthcare & MedTech">Healthcare & MedTech</option>
+        <option value="FinTech & Banking">FinTech & Banking</option>
+        <option value="E-Commerce & Retail">E-Commerce & Retail</option>
+        <option value="Technology">Technology</option>
+      </select>
+    </div>
+    <div>
+      <label>SDR Agent Name</label>
+      <input type="text" id="cfg-agent" placeholder="e.g. Alex" value="Alex"/>
+    </div>
+    <button class="modal-btn" id="start-btn">🚀 Start Intake Session</button>
+  </div>
+</div>
+
+<header>
+  <div class="logo" id="header-logo">S</div>
+  <div class="header-text">
+    <h1 id="header-company">Lead Intake Agent</h1>
+    <div class="sub" id="header-sub">ScopeSynth OS</div>
+  </div>
+  <div class="header-right">
+    <button type="button" id="themeToggle" aria-label="Toggle theme" style="width:36px;height:36px;border-radius:8px;border:1px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px">🌓</button>
+    <span class="badge">🤖 Gemini 2.5 Flash</span>
+    <a href="/document-engine.html" class="link-btn">Document Engine</a>
+    <a href="/margin-audit.html" class="link-btn">Margin Audit</a>
+    <a href="/dashboard.html" class="link-btn">CRM</a>
+  </div>
+</header>
+
+<div id="chat"></div>
+
+<div class="chat-footer">
+  <input id="msg-input" type="text" placeholder="Type your message…" autocomplete="off" disabled/>
+  <button id="send-btn" disabled>Send</button>
+</div>
+
+<script>
+let company = '', sector = '', agentName = '', apiKey = '', sessionId = Math.random().toString(36).substring(2), chatDone = false;
+
+function showConfig() { document.getElementById('config-modal').style.display = 'flex'; }
+
+document.getElementById('start-btn').addEventListener('click', () => {
+  const co = document.getElementById('cfg-company').value.trim();
+  const sec = document.getElementById('cfg-sector').value;
+  const ag = document.getElementById('cfg-agent').value.trim() || 'Alex';
+  const key = document.getElementById('cfg-apikey').value.trim();
+  if (!key) { alert('Please enter your Gemini API key.'); return; }
+  if (!co) { document.getElementById('cfg-company').focus(); return; }
+  company = co; sector = sec; agentName = ag; apiKey = key;
+  sessionId = Math.random().toString(36).substring(2);
+  chatDone = false;
+  const initials = co.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  document.getElementById('header-logo').textContent = initials;
+  document.getElementById('header-company').textContent = co + ' — Lead Intake';
+  document.getElementById('header-sub').textContent = sec;
+  document.getElementById('config-modal').style.display = 'none';
+  document.getElementById('chat').innerHTML = '';
+  document.getElementById('msg-input').disabled = false;
+  document.getElementById('send-btn').disabled = false;
+  sendMessage(null);
+});
+
+const chat = document.getElementById('chat');
+const msgInput = document.getElementById('msg-input');
+const sendBtn = document.getElementById('send-btn');
+
+function addMsg(text, role) {
+  const wrap = document.createElement('div');
+  wrap.className = `msg ${role}`;
+  const av = document.createElement('div');
+  av.className = 'avatar';
+  av.textContent = role === 'agent' ? (agentName.slice(0,2).toUpperCase()) : 'You';
+  const bub = document.createElement('div');
+  bub.className = 'bubble';
+  bub.textContent = text;
+  wrap.appendChild(av); wrap.appendChild(bub);
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function showTyping() {
+  const t = document.createElement('div');
+  t.className = 'msg agent'; t.id = 'typing-indicator';
+  t.innerHTML = `<div class="avatar">${(agentName || 'AI').slice(0,2).toUpperCase()}</div><div class="typing"><span></span><span></span><span></span></div>`;
+  chat.appendChild(t);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function clientLabelFromLead(leadData) {
+  const email = (leadData.email || '').trim();
+  if (email) {
+    const local = email.split('@')[0] || '';
+    const name = local.replace(/[._+-]+/g, ' ').trim() || 'Lead';
+    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+  }
+  return (leadData.project_type || 'New Lead').slice(0, 40) || 'New Lead';
+}
+
+function esc(s) {
+  if (s == null) return '';
+  const t = String(s);
+  return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function showDoneActions(leadData, companyName) {
+  const label = clientLabelFromLead(leadData);
+  const enc = encodeURIComponent(label);
+  const companyLabel = esc((companyName || company) || 'your company');
+  const summary = [];
+  if (leadData.email) summary.push('Email: ' + esc(leadData.email));
+  if (leadData.project_type) summary.push('Project: ' + esc(leadData.project_type.slice(0, 60) + (leadData.project_type.length > 60 ? '…' : '')));
+  if (leadData.budget) summary.push('Budget: ' + esc(leadData.budget));
+  if (leadData.timeline) summary.push('Timeline: ' + esc(leadData.timeline));
+
+  const banner = document.createElement('div');
+  banner.className = 'done-banner';
+  banner.innerHTML = `
+    <div class="done-title">✅ Lead captured for ${companyLabel}!</div>
+    ${summary.length ? '<div class="done-summary">' + summary.map(s => '<span>' + s + '</span>').join('') + '</div>' : ''}
+    <div class="done-actions">
+      <button type="button" class="btn-crm" data-action="add-crm">Add to CRM &amp; go to Dashboard</button>
+      <a href="/case-study.html?client=${enc}" class="btn-link">Send Case Study</a>
+      <a href="/sow-builder.html?client=${enc}" class="btn-link">Build SOW</a>
+      <a href="/document-engine.html?client=${enc}" class="btn-link">Document Engine</a>
+      <a href="/dashboard.html" class="btn-link">View CRM</a>
+    </div>
+  `;
+  chat.appendChild(banner);
+  chat.scrollTop = chat.scrollHeight;
+
+  banner.querySelector('[data-action="add-crm"]').addEventListener('click', async () => {
+    const clientName = label;
+    const projectType = (leadData.project_type || 'Inquiry').trim().slice(0, 200);
+    const email = (leadData.email || '').trim().toLowerCase() || 'lead@example.com';
+    try {
+      const r = await fetch('/api/leads/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify([{ clientName, projectType, email }])
+      });
+      const out = await r.json();
+      if (!r.ok) throw new Error(out.error || 'Failed to add lead');
+      window.location.href = '/dashboard.html';
+    } catch (e) {
+      alert('Could not add to CRM: ' + e.message);
+    }
+  });
+}
+
+async function sendMessage(msg) {
+  sendBtn.disabled = true;
+  showTyping();
+  try {
+    const r = await fetch('/api/lead-intake/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, company, sector, agent_name: agentName, message: msg || undefined, apiKey })
+    });
+    const data = await r.json();
+    document.getElementById('typing-indicator')?.remove();
+    if (!r.ok) throw new Error(data.error || 'Request failed');
+    addMsg(data.response, 'agent');
+    if (data.stage === 'done') {
+      chatDone = true;
+      showDoneActions(data.lead_data || {}, data.company || company);
+      msgInput.disabled = true;
+    } else sendBtn.disabled = false;
+  } catch (e) {
+    document.getElementById('typing-indicator')?.remove();
+    addMsg('Error: ' + e.message, 'agent');
+    sendBtn.disabled = false;
+  }
+}
+
+sendBtn.addEventListener('click', () => {
+  const txt = msgInput.value.trim();
+  if (!txt || chatDone) return;
+  addMsg(txt, 'user');
+  msgInput.value = '';
+  sendMessage(txt);
+});
+msgInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !chatDone) sendBtn.click(); });
+
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('scopesynth_theme', isDark ? 'dark' : 'light');
+});
+</script>
+</body>
+</html>

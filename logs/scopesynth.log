@@ -1,1 +1,104 @@
 {"timestamp":"2026-03-01T14:09:38.966Z","level":"info","message":"ScopeSynth OS server running","port":3000}
+{"timestamp":"2026-03-01T14:26:36.710Z","level":"info","message":"Compile SOW request received","mode":"manual","lines":8,"baseRate":100,"taxRate":18,"multiplier":1}
+{"timestamp":"2026-03-01T14:26:36.712Z","level":"info","message":"Parser completed","totalHours":60,"grandTotal":7080}
+{"timestamp":"2026-03-01T14:26:36.712Z","level":"info","message":"Manual summary used","chars":602}
+{"timestamp":"2026-03-01T14:34:23.630Z","level":"info","message":"Compile SOW request received","mode":"ai","lines":7,"baseRate":100,"taxRate":18,"multiplier":1}
+{"timestamp":"2026-03-01T14:34:23.632Z","level":"info","message":"Parser completed","totalHours":45,"grandTotal":5310}
+{"timestamp":"2026-03-01T14:34:31.265Z","level":"info","message":"Gemini response received","finishReason":"STOP","hasContext":true}
+{"timestamp":"2026-03-01T17:45:19.181Z","level":"info","message":"ScopeSynth OS server running","port":3000}
+{"timestamp":"2026-03-01T17:45:32.123Z","level":"info","message":"GET /api/leads","count":0}
+{"timestamp":"2026-03-01T17:48:02.759Z","level":"info","message":"POST /api/leads/bulk","received":3,"created":3,"skipped":0}
+{"timestamp":"2026-03-01T17:48:02.764Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-01T17:48:18.003Z","level":"info","message":"Lead status updated","id":"82d3e0ef-d9f0-4366-b258-f8fdbec47f93","from":"New Lead","to":"Case Study Sent"}
+{"timestamp":"2026-03-01T17:48:18.008Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-01T18:07:38.090Z","level":"info","message":"POST /api/leads/bulk","received":3,"created":3,"skipped":0}
+{"timestamp":"2026-03-01T18:07:38.106Z","level":"info","message":"GET /api/leads","count":6}
+{"timestamp":"2026-03-01T18:07:49.117Z","level":"info","message":"Lead status updated","id":"aa132326-2935-463c-8cd9-5e9a7aebafe0","from":"New Lead","to":"Case Study Sent"}
+{"timestamp":"2026-03-01T18:07:49.121Z","level":"info","message":"GET /api/leads","count":6}
+{"timestamp":"2026-03-01T18:08:49.671Z","level":"info","message":"GET /api/leads","count":6}
+{"timestamp":"2026-03-02T06:31:04.677Z","level":"info","message":"ScopeSynth OS server running","port":3000}
+{"timestamp":"2026-03-02T06:31:11.025Z","level":"info","message":"GET /api/leads","count":0}
+{"timestamp":"2026-03-02T06:31:19.341Z","level":"info","message":"POST /api/leads/bulk","received":3,"created":3,"skipped":0}
+{"timestamp":"2026-03-02T06:31:19.345Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T06:33:26.022Z","level":"info","message":"AI case study generated","chars":2018}
+{"timestamp":"2026-03-02T06:53:10.074Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T06:53:58.671Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T06:54:01.344Z","level":"info","message":"Lead status updated","id":"a6962391-7440-47ba-bb09-b53e67bb6fa2","from":"New Lead","to":"Case Study Sent"}
+{"timestamp":"2026-03-02T06:54:01.348Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T06:54:09.769Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T06:54:17.720Z","level":"info","message":"Lead status updated","id":"a6962391-7440-47ba-bb09-b53e67bb6fa2","from":"Case Study Sent","to":"SOW Approved"}
+{"timestamp":"2026-03-02T06:54:17.725Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T07:03:42.460Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T07:48:20.920Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T07:49:08.995Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T11:08:31.575Z","level":"info","message":"ScopeSynth OS server running","port":3000}
+{"timestamp":"2026-03-02T11:08:42.230Z","level":"info","message":"GET /api/leads","count":0}
+{"timestamp":"2026-03-02T11:08:44.815Z","level":"info","message":"GET /api/leads","count":0}
+{"timestamp":"2026-03-02T11:15:03.314Z","level":"info","message":"ScopeSynth OS server running","port":3000}
+{"timestamp":"2026-03-02T11:15:12.901Z","level":"info","message":"GET /api/leads","count":0}
+{"timestamp":"2026-03-02T11:25:08.774Z","level":"info","message":"GET /api/leads","count":0}
+{"timestamp":"2026-03-02T11:25:09.592Z","level":"info","message":"GET /api/leads","count":0}
+{"timestamp":"2026-03-02T11:29:15.460Z","level":"info","message":"ScopeSynth OS server running","port":3000}
+{"timestamp":"2026-03-02T11:29:30.389Z","level":"info","message":"GET /api/leads","count":0}
+{"timestamp":"2026-03-02T11:29:48.556Z","level":"info","message":"POST /api/leads/bulk","received":3,"created":3,"skipped":0}
+{"timestamp":"2026-03-02T11:29:48.559Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T11:36:15.621Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T11:39:16.396Z","level":"info","message":"AI case study generated","chars":1828}
+{"timestamp":"2026-03-02T11:39:59.069Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T11:40:02.451Z","level":"info","message":"Lead status updated","id":"2a0bb248-01c7-4b95-b777-86c08ec2dbc8","from":"New Lead","to":"Case Study Sent"}
+{"timestamp":"2026-03-02T11:40:02.457Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T11:40:23.373Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T11:40:59.020Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T11:41:05.915Z","level":"info","message":"Lead status updated","id":"2a0bb248-01c7-4b95-b777-86c08ec2dbc8","from":"Case Study Sent","to":"SOW Approved"}
+{"timestamp":"2026-03-02T11:41:05.921Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T11:55:28.963Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T11:55:44.248Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T13:30:09.713Z","level":"info","message":"ScopeSynth OS server running","port":3000}
+{"timestamp":"2026-03-02T13:30:24.727Z","level":"info","message":"GET /api/leads","count":0}
+{"timestamp":"2026-03-02T13:30:47.696Z","level":"info","message":"GET /api/leads","count":0}
+{"timestamp":"2026-03-02T13:47:19.974Z","level":"info","message":"ScopeSynth OS server running","port":3000}
+{"timestamp":"2026-03-02T13:47:39.373Z","level":"info","message":"GET /api/leads","count":0}
+{"timestamp":"2026-03-02T13:48:34.260Z","level":"info","message":"Margin audit completed","scopeLen":100}
+{"timestamp":"2026-03-02T13:50:20.580Z","level":"error","message":"Lead intake Gemini error","error":"Gemini API error 400: {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"API key not valid. Please pass a valid API key.\",\n    \"status\": \"INVALID_ARGUMENT\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.ErrorInfo\",\n        \"reason\": \"API_KEY_INVALID\",\n        \"domain\": \"googleapis.com\",\n        \"metadata\": {\n          \"service\": \"generativelanguage.googleapis.com\"\n        }\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.LocalizedMessage\",\n        \"locale\": \"en-US\",\n        \"message\": \"API key not valid. Please pass a valid API key.\"\n      }\n    ]\n  }\n}\n"}
+{"timestamp":"2026-03-02T13:50:27.871Z","level":"error","message":"Lead intake Gemini error","error":"Gemini API error 400: {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"API key not valid. Please pass a valid API key.\",\n    \"status\": \"INVALID_ARGUMENT\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.ErrorInfo\",\n        \"reason\": \"API_KEY_INVALID\",\n        \"domain\": \"googleapis.com\",\n        \"metadata\": {\n          \"service\": \"generativelanguage.googleapis.com\"\n        }\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.LocalizedMessage\",\n        \"locale\": \"en-US\",\n        \"message\": \"API key not valid. Please pass a valid API key.\"\n      }\n    ]\n  }\n}\n"}
+{"timestamp":"2026-03-02T13:57:51.154Z","level":"info","message":"Lead intake chat","session_id":"03it2c9pi34c","stage":"project"}
+{"timestamp":"2026-03-02T15:07:17.151Z","level":"info","message":"Lead intake chat","session_id":"03it2c9pi34c","stage":"budget"}
+{"timestamp":"2026-03-02T15:07:49.412Z","level":"info","message":"Lead intake chat","session_id":"03it2c9pi34c","stage":"email"}
+{"timestamp":"2026-03-02T15:14:41.089Z","level":"info","message":"GET /api/leads","count":0}
+{"timestamp":"2026-03-02T15:15:19.143Z","level":"info","message":"POST /api/leads/bulk","received":3,"created":3,"skipped":0}
+{"timestamp":"2026-03-02T15:15:19.149Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T15:15:33.777Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T15:15:44.199Z","level":"info","message":"Lead status updated","id":"9346fca9-c6d8-4624-b333-c529bf04a193","from":"New Lead","to":"Case Study Sent"}
+{"timestamp":"2026-03-02T15:15:44.206Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T15:15:48.199Z","level":"info","message":"Lead status updated","id":"9346fca9-c6d8-4624-b333-c529bf04a193","from":"Case Study Sent","to":"SOW Approved"}
+{"timestamp":"2026-03-02T15:15:48.205Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T15:15:54.541Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T15:16:11.509Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T15:16:16.299Z","level":"info","message":"Lead status updated","id":"ecff02e4-9f5f-48cc-aa5d-ade49c4610ba","from":"New Lead","to":"Case Study Sent"}
+{"timestamp":"2026-03-02T15:16:16.303Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T15:16:38.604Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T15:17:21.300Z","level":"info","message":"Invoice saved","id":"INV-1772464641300-4obbv3","clientName":"—"}
+{"timestamp":"2026-03-02T15:18:18.571Z","level":"info","message":"Lead intake chat","session_id":"sr4vud588ha","stage":"project"}
+{"timestamp":"2026-03-02T15:18:48.164Z","level":"info","message":"Lead intake chat","session_id":"sr4vud588ha","stage":"budget"}
+{"timestamp":"2026-03-02T15:35:21.699Z","level":"info","message":"Lead intake chat","session_id":"sr4vud588ha","stage":"email"}
+{"timestamp":"2026-03-02T15:47:02.567Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T15:47:14.598Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T15:47:26.590Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T15:49:50.584Z","level":"info","message":"Compile SOW request received","mode":"ai","lines":10,"baseRate":100,"taxRate":18,"multiplier":1}
+{"timestamp":"2026-03-02T15:49:50.590Z","level":"info","message":"Parser completed","totalHours":65,"grandTotal":7670}
+{"timestamp":"2026-03-02T15:49:58.206Z","level":"info","message":"Gemini response received","finishReason":"STOP","hasContext":true}
+{"timestamp":"2026-03-02T15:52:03.952Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T15:53:39.861Z","level":"info","message":"Compile SOW request received","mode":"ai","lines":8,"baseRate":100,"taxRate":18,"multiplier":1}
+{"timestamp":"2026-03-02T15:53:39.864Z","level":"info","message":"Parser completed","totalHours":55,"grandTotal":6490}
+{"timestamp":"2026-03-02T15:53:45.918Z","level":"info","message":"Gemini response received","finishReason":"STOP","hasContext":true}
+{"timestamp":"2026-03-02T15:54:09.338Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T15:56:13.917Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T16:01:16.832Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T16:01:18.711Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T16:03:52.299Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T16:07:17.916Z","level":"info","message":"AI SOP generated","chars":3948}
+{"timestamp":"2026-03-02T16:07:59.969Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T16:08:08.182Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T16:08:11.254Z","level":"info","message":"Lead status updated","id":"ecff02e4-9f5f-48cc-aa5d-ade49c4610ba","from":"Case Study Sent","to":"SOW Approved"}
+{"timestamp":"2026-03-02T16:08:11.260Z","level":"info","message":"GET /api/leads","count":3}
+{"timestamp":"2026-03-02T16:08:30.900Z","level":"info","message":"GET /api/leads","count":3}

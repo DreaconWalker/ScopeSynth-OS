@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ScopeSynth OS — CRM Dashboard</title>
+  <script>
+    (function(){var s=localStorage.getItem('scopesynth_theme')||'dark';document.documentElement.classList.toggle('dark',s==='dark');})();
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { DEFAULT: '#e11d48', light: '#fb7185', dark: '#9f1239' },
+          },
+          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    .dark ::-webkit-scrollbar-track { background: #1e293b; }
+    ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
+    .dark ::-webkit-scrollbar-thumb { background: #475569; }
+    .lead-card { transition: box-shadow .15s ease, transform .15s ease; }
+    .lead-card:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px #e11d4855, 0 8px 24px #00000066; }
+    #toast { transition: opacity .3s ease, transform .3s ease; }
+    .drop-active { border-color: #e11d48 !important; background: #1e0a13 !important; }
+    .kanban-col { min-height: 220px; }
+    #statusModal { transition: opacity .2s ease, visibility .2s ease; }
+    #statusModal.modal-open  { opacity: 1; visibility: visible; }
+    #statusModal.modal-close { opacity: 0; visibility: hidden; }
+    #statusModalPanel { transition: transform .25s cubic-bezier(.4,0,.2,1); }
+    #statusModal.modal-open  #statusModalPanel { transform: translateY(0) scale(1); }
+    #statusModal.modal-close #statusModalPanel { transform: translateY(16px) scale(.97); }
+    .drawer-overlay { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.4); opacity: 0; visibility: hidden; transition: opacity .2s, visibility .2s; }
+    .drawer-overlay.open { opacity: 1; visibility: visible; }
+    .drawer-panel { position: fixed; top: 0; left: 0; z-index: 50; width: 280px; max-width: 85vw; height: 100vh; background: var(--tw-bg-opacity, 1); background-color: rgb(30 41 59); border-right: 1px solid rgb(51 65 85); transform: translateX(-100%); transition: transform .25s ease; overflow-y: auto; }
+    .dark .drawer-panel { background-color: rgb(15 23 42); border-right-color: rgb(51 65 85); }
+    html:not(.dark) .drawer-panel { background-color: #fff; border-right-color: #e2e8f0; }
+    .drawer-overlay.open .drawer-panel { transform: translateX(0); }
+    .drawer-panel .nav-link { display: block; padding: 12px 20px; font-size: 14px; color: #94a3b8; text-decoration: none; border-bottom: 1px solid rgba(51,65,85,.5); transition: background .15s, color .15s; }
+    .drawer-panel .nav-link:hover { background: rgba(255,255,255,.05); color: #f1f5f9; }
+    html:not(.dark) .drawer-panel .nav-link { color: #64748b; border-bottom-color: #e2e8f0; }
+    html:not(.dark) .drawer-panel .nav-link:hover { background: #f8fafc; color: #0f172a; }
+    .drawer-panel .nav-link.active { font-weight: 600; color: #e11d48; }
+    .drawer-panel .drawer-title { padding: 16px 20px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #64748b; }
+    .dark .drawer-panel .drawer-title { color: #94a3b8; }
+
+    .analytics-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .analytics-bar .bar-label { width: 110px; font-size: 12px; font-weight: 500; color: inherit; flex-shrink: 0; }
+    .analytics-bar .bar-track { flex: 1; max-width: 240px; height: 20px; background: rgba(0,0,0,.1); border-radius: 6px; overflow: hidden; }
+    .dark .analytics-bar .bar-track { background: rgba(255,255,255,.08); }
+    .analytics-bar .bar-fill { height: 100%; border-radius: 6px; transition: width .35s ease; }
+    .analytics-bar .bar-val { font-size: 12px; font-weight: 700; color: var(--tw-text-opacity, 1); min-width: 36px; text-align: right; }
+    .company-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; }
+    .dark .company-card { background: #1e293b; border-color: #334155; }
+    .company-card h3 { font-size: 14px; font-weight: 700; color: inherit; margin-bottom: 8px; }
+    .company-card .lead-tag { display: inline-block; font-size: 11px; padding: 4px 8px; border-radius: 8px; margin: 2px 4px 2px 0; }
+    .stat-tile { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; text-align: center; }
+    .dark .stat-tile { background: #1e293b; border-color: #334155; }
+    .stat-tile .val { font-size: 24px; font-weight: 800; color: #e11d48; }
+    .stat-tile .lbl { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-top: 4px; }
+    .dark .stat-tile .lbl { color: #94a3b8; }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 min-h-screen font-sans antialiased transition-colors duration-200">
+
+  <div id="drawerOverlay" class="drawer-overlay" aria-hidden="true">
+    <div class="absolute inset-0" id="drawerBackdrop" aria-label="Close menu"></div>
+    <div class="drawer-panel" role="dialog" aria-label="Navigation">
+      <div class="drawer-title">Features</div>
+      <a href="/sow-builder.html" class="nav-link">SOW Builder</a>
+      <a href="/sop-builder.html" class="nav-link">SOP Builder</a>
+      <a href="/document-engine.html" class="nav-link">Document Engine</a>
+      <a href="/invoice-dashboard.html" class="nav-link">Invoices</a>
+      <a href="/lead-intake.html" class="nav-link">Lead Intake</a>
+      <a href="/margin-audit.html" class="nav-link">Margin Audit</a>
+      <a href="/dashboard.html" class="nav-link active">CRM</a>
+    </div>
+  </div>
+
+  <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-950/80 backdrop-blur border-b border-slate-200 dark:border-slate-800">
+    <div class="max-w-screen-2xl mx-auto px-6 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <button type="button" id="drawerOpen" aria-label="Open menu" class="p-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <a href="/" class="flex items-center gap-2 group">
+          <span class="w-7 h-7 rounded-md bg-brand flex items-center justify-center text-white font-bold text-sm select-none">S</span>
+          <span class="font-semibold tracking-tight text-slate-800 dark:text-slate-100 group-hover:text-brand transition-colors">
+            ScopeSynth <span class="text-brand">OS</span>
+          </span>
+        </a>
+      </div>
+      <div class="flex items-center gap-2">
+        <button type="button" id="themeToggle" aria-label="Toggle theme" class="p-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+          <svg class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <svg class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+        </button>
+        <button type="button" onclick="downloadTemplate()"
+          class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-500 dark:hover:border-slate-500 hover:text-slate-800 dark:hover:text-slate-100 text-sm font-medium transition-colors">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Download Template
+        </button>
+        <label for="csvFile" class="cursor-pointer inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-brand hover:bg-brand-dark text-white text-sm font-medium transition-colors">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12V4m0 0L8 8m4-4l4 4"/></svg>
+          Bulk Upload CSV
+        </label>
+        <input id="csvFile" type="file" accept=".csv" class="hidden" />
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-screen-2xl mx-auto px-6 py-8">
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-slate-800 dark:text-slate-100">Lead Pipeline</h1>
+        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Track prospects from first contact through invoicing.</p>
+      </div>
+      <div id="summaryPills" class="flex flex-wrap gap-2 text-xs font-medium"></div>
+    </div>
+
+    <div id="dropZone" class="mb-8 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/40 p-8 text-center cursor-pointer hover:border-brand hover:bg-slate-200 dark:hover:bg-slate-800/70 transition-all"
+         onclick="document.getElementById('csvFile').click()">
+      <svg class="w-10 h-10 mx-auto text-slate-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-3-3v6M4.5 15.75A7.5 7.5 0 0112 4.5a7.5 7.5 0 017.5 7.5v.25A4.5 4.5 0 0115 16.5H9a4.5 4.5 0 01-4.5-4.75z"/>
+      </svg>
+      <p class="font-medium text-slate-600 dark:text-slate-300">Drop a CSV file or click to browse</p>
+      <p class="text-slate-500 dark:text-slate-500 text-sm mt-1">Expected columns: <code class="text-brand">Client Name, Project Type, Email</code></p>
+    </div>
+
+    <div id="kanbanBoard" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5"></div>
+
+    <div id="emptyState" class="hidden flex flex-col items-center justify-center py-24 text-center">
+      <svg class="w-16 h-16 text-slate-400 dark:text-slate-700 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
+      </svg>
+      <p class="text-slate-500 dark:text-slate-500 text-lg font-medium">No leads yet</p>
+      <p class="text-slate-500 dark:text-slate-600 text-sm mt-1">Upload a CSV to populate your pipeline.</p>
+    </div>
+
+    <section class="mt-10 border-t border-slate-200 dark:border-slate-700 pt-8">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Pipeline progress</h2>
+        <button type="button" onclick="openStatusModal()" class="flex items-center gap-2 px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-lg transition-colors">
+          View all (search & filter)
+        </button>
+      </div>
+      <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/60">
+        <table class="w-full text-sm border-collapse">
+          <thead class="bg-slate-200 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+            <tr>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Client</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Project type</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Email</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+            </tr>
+          </thead>
+          <tbody id="progress-table-body"></tbody>
+        </table>
+        <div id="progress-table-empty" class="hidden text-center py-10 text-slate-500 text-sm">No leads — upload a CSV to see progress here.</div>
+      </div>
+    </section>
+
+    <!-- Slidable: Charts, Analysis, By company -->
+    <section class="mt-10 border-t border-slate-200 dark:border-slate-700 pt-8">
+      <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Analytics &amp; insights</h2>
+      <div class="slidable-tabs flex gap-1 p-1 rounded-xl bg-slate-200 dark:bg-slate-800/60 w-fit mb-6">
+        <button type="button" class="slidable-tab px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-sm" data-tab="0">Charts</button>
+        <button type="button" class="slidable-tab px-4 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200" data-tab="1">Analysis &amp; stats</button>
+        <button type="button" class="slidable-tab px-4 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200" data-tab="2">By company</button>
+      </div>
+      <div class="slidable-track relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/40 min-h-[280px]">
+        <div class="slidable-pane p-6" data-pane="0" id="pane-charts">
+          <div id="chartsContent" class="space-y-6"></div>
+          <p id="chartsEmpty" class="hidden text-center py-12 text-slate-500 dark:text-slate-400 text-sm">No data yet. Upload CSV to see charts.</p>
+        </div>
+        <div class="slidable-pane hidden p-6" data-pane="1" id="pane-stats">
+          <div id="statsContent" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
+          <p id="statsEmpty" class="hidden text-center py-12 text-slate-500 dark:text-slate-400 text-sm">No data yet. Upload CSV to see analysis.</p>
+        </div>
+        <div class="slidable-pane hidden p-6" data-pane="2" id="pane-company">
+          <div id="companyCardsContent" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+          <p id="companyEmpty" class="hidden text-center py-12 text-slate-500 dark:text-slate-400 text-sm">No data yet. Upload CSV to see companies.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="fixed bottom-6 right-6 z-50 opacity-0 translate-y-4 pointer-events-none max-w-sm px-5 py-3 rounded-xl shadow-2xl text-sm font-medium flex items-center gap-3"></div>
+
+  <div id="statusModal" class="modal-close fixed inset-0 z-50 flex items-center justify-center p-4" aria-modal="true" role="dialog" onclick="handleOverlayClick(event)">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+    <div id="statusModalPanel" class="relative w-full max-w-3xl max-h-[85vh] flex flex-col bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+        <div>
+          <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">Lead status overview</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5"><span id="statusModalCount">0</span> leads</p>
+        </div>
+        <div class="flex items-center gap-2 mr-4">
+          <span class="text-xs text-slate-500">Filter:</span>
+          <div id="filterChips" class="flex gap-1.5 flex-wrap"></div>
+        </div>
+        <button type="button" onclick="closeStatusModal()" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-700 transition-colors" aria-label="Close">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="px-6 py-3 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+        <input id="statusSearch" type="text" placeholder="Search by client, project, or email..." oninput="filterModalTable()"
+          class="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500" />
+      </div>
+      <div class="overflow-y-auto flex-1">
+        <table class="w-full text-sm border-collapse">
+          <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+            <tr>
+              <th class="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase w-[30%]">Client</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase w-[25%]">Project type</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase w-[25%]">Email</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase w-[20%]">Status</th>
+            </tr>
+          </thead>
+          <tbody id="statusTableBody"></tbody>
+        </table>
+        <div id="statusEmpty" class="hidden text-center py-16 text-slate-500 text-sm">No leads match your search.</div>
+      </div>
+      <div id="statusSummaryBar" class="flex items-center gap-3 px-6 py-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 flex-shrink-0 flex-wrap"></div>
+    </div>
+  </div>
+
+  <script>
+  const STAGES = ['New Lead', 'Case Study Sent', 'SOW Approved', 'Invoiced'];
+
+  const STAGE_META = {
+    'New Lead':        { color: 'text-sky-400',    ring: 'ring-sky-500/30',   bg: 'bg-sky-500/10',   dot: 'bg-sky-400'    },
+    'Case Study Sent': { color: 'text-amber-400',  ring: 'ring-amber-500/30', bg: 'bg-amber-500/10', dot: 'bg-amber-400'  },
+    'SOW Approved':    { color: 'text-emerald-400', ring: 'ring-emerald-500/30', bg: 'bg-emerald-500/10', dot: 'bg-emerald-400' },
+    'Invoiced':        { color: 'text-violet-400', ring: 'ring-violet-500/30', bg: 'bg-violet-500/10', dot: 'bg-violet-400' },
+  };
+
+  // Correct links: Case Study → case-study.html; SOW → sow-builder.html; Invoice → sow-builder.html?type=invoice
+  function docUrl(stage, clientName) {
+    const enc = encodeURIComponent(clientName);
+    if (stage === 'New Lead') return `/case-study.html?client=${enc}`;
+    if (stage === 'Case Study Sent') return `/sow-builder.html?client=${enc}`;
+    if (stage === 'SOW Approved') return `/sow-builder.html?type=invoice&client=${enc}`;
+    return null;
+  }
+
+  const DOC_ACTIONS = {
+    'New Lead':        { label: 'Send Case Study', icon: '📋' },
+    'Case Study Sent': { label: 'Build SOW',        icon: '📝' },
+    'SOW Approved':    { label: 'Generate Invoice', icon: '🧾' },
+    'Invoiced':        null,
+  };
+
+  const NEXT_STAGE = {
+    'New Lead':        'Case Study Sent',
+    'Case Study Sent': 'SOW Approved',
+    'SOW Approved':    'Invoiced',
+    'Invoiced':        null,
+  };
+
+  const STATUS_BADGE = {
+    'New Lead':        'bg-sky-500/20 text-sky-300 border border-sky-500/30',
+    'Case Study Sent': 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
+    'SOW Approved':    'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
+    'Invoiced':        'bg-violet-500/20 text-violet-300 border border-violet-500/30',
+  };
+
+  let leadsData = [];
+
+  function escHtml(str) {
+    return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  let toastTimer;
+  function showToast(msg, type = 'success') {
+    const el = document.getElementById('toast');
+    el.className = 'fixed bottom-6 right-6 z-50 max-w-sm px-5 py-3 rounded-xl shadow-2xl text-sm font-medium flex items-center gap-3 transition-all duration-300 ' +
+      (type === 'success' ? 'bg-emerald-900 border border-emerald-700 text-emerald-200' : 'bg-rose-900 border border-rose-700 text-rose-200');
+    el.innerHTML = `<span>${type === 'success' ? '✓' : '✕'}</span><span>${msg}</span>`;
+    el.style.opacity = '1'; el.style.transform = 'translateY(0)';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(8px)'; }, 3200);
+  }
+
+  function downloadTemplate() {
+    const content = ['Client Name,Project Type,Email','Acme Corp,E-Commerce Platform,contact@acme.com','Global Tech,Mobile App UI,hello@globaltech.com'].join('\r\n');
+    const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'lead_template.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('Template downloaded.', 'success');
+  }
+
+  async function fetchLeads() {
+    const res = await fetch('/api/leads');
+    if (!res.ok) throw new Error('Failed to fetch leads');
+    leadsData = await res.json();
+    return leadsData;
+  }
+
+  async function bulkUploadLeads(leads) {
+    const res = await fetch('/api/leads/bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(leads),
+    });
+    return res.json();
+  }
+
+  async function advanceStatus(id) {
+    const res = await fetch(`/api/leads/${id}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ advance: true }),
+    });
+    return res.json();
+  }
+
+  function parseCSV(text) {
+    const lines = text.trim().split(/\r?\n/);
+    if (lines.length < 2) throw new Error('CSV must have a header row and at least one data row.');
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, ''));
+    const colMap = {
+      clientName:  headers.findIndex(h => h === 'clientname' || h === 'client'),
+      projectType: headers.findIndex(h => h === 'projecttype' || h === 'project' || h === 'type'),
+      email:       headers.findIndex(h => h === 'email'),
+    };
+    if (colMap.clientName === -1 || colMap.email === -1) throw new Error('CSV must include "Client Name" and "Email" columns.');
+    const leads = [];
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      const cols = line.match(/(".*?"|[^,]+)(?=,|$)/g) || line.split(',');
+      const clean = c => (cols[c] || '').replace(/^"|"$/g, '').trim();
+      leads.push({
+        clientName:  clean(colMap.clientName),
+        projectType: colMap.projectType !== -1 ? (clean(colMap.projectType) || 'General') : 'General',
+        email:       clean(colMap.email),
+      });
+    }
+    return leads;
+  }
+
+  function renderSummaryPills(leads) {
+    const container = document.getElementById('summaryPills');
+    const counts = STAGES.reduce((acc, s) => ({ ...acc, [s]: 0 }), {});
+    leads.forEach(l => { if (counts[l.status] !== undefined) counts[l.status]++; });
+    container.innerHTML = STAGES.map(stage => {
+      const m = STAGE_META[stage];
+      return `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${m.bg} ring-1 ${m.ring} ${m.color}"><span class="w-1.5 h-1.5 rounded-full ${m.dot}"></span>${stage} <span class="font-bold">${counts[stage]}</span></span>`;
+    }).join('');
+  }
+
+  function sopUrl(clientName) {
+    return `/sop-builder.html?client=${encodeURIComponent(clientName)}`;
+  }
+
+  function buildCard(lead) {
+    const m   = STAGE_META[lead.status];
+    const doc = DOC_ACTIONS[lead.status];
+    const nx  = NEXT_STAGE[lead.status];
+    const url = doc ? docUrl(lead.status, lead.clientName) : null;
+
+    const initials = (lead.clientName || '')
+      .split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
+
+    const docBtn = doc
+      ? `<a href="${url}" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-brand/10 hover:bg-brand/20 text-brand ring-1 ring-brand/30 text-xs font-semibold transition-colors">${doc.icon} ${doc.label}</a>`
+      : `<span class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-violet-500/10 ring-1 ring-violet-500/30 text-violet-400 text-xs font-semibold cursor-default">✅ Fully Invoiced</span>`;
+
+    const sopBtn = (lead.status === 'New Lead' || lead.status === 'Case Study Sent' || lead.status === 'SOW Approved')
+      ? `<a href="${sopUrl(lead.clientName)}" class="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-xs font-medium transition-colors border border-slate-300 dark:border-slate-600">📋 SOP</a>`
+      : '';
+
+    const nextBtn = nx
+      ? `<button type="button" onclick="handleAdvance('${lead.id}')" class="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-xs font-medium transition-colors whitespace-nowrap border border-slate-300 dark:border-slate-600">→ ${nx}</button>`
+      : '';
+
+    return `
+      <div class="lead-card bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-col gap-3" data-id="${lead.id}">
+        <div class="flex items-start gap-3">
+          <div class="w-9 h-9 rounded-lg bg-brand/20 ring-1 ring-brand/40 flex items-center justify-center text-brand font-bold text-sm flex-shrink-0">${initials}</div>
+          <div class="min-w-0">
+            <p class="font-semibold text-slate-800 dark:text-slate-100 truncate leading-tight">${escHtml(lead.clientName)}</p>
+            <p class="text-slate-500 dark:text-slate-400 text-xs truncate">${escHtml(lead.projectType)}</p>
+          </div>
+        </div>
+        <p class="text-xs text-slate-500 truncate">${escHtml(lead.email)}</p>
+        <span class="self-start inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${m.bg} ring-1 ${m.ring} ${m.color}"><span class="w-1.5 h-1.5 rounded-full ${m.dot}"></span>${lead.status}</span>
+        <div class="flex gap-2 pt-1 flex-wrap">${docBtn}${sopBtn}${nextBtn}</div>
+      </div>`;
+  }
+
+  function renderBoard(leads) {
+    const board = document.getElementById('kanbanBoard');
+    const empty = document.getElementById('emptyState');
+    if (!leads.length) {
+      board.innerHTML = '';
+      empty.classList.replace('hidden', 'flex');
+      return;
+    }
+    empty.classList.replace('flex', 'hidden');
+    const grouped = STAGES.reduce((acc, s) => ({ ...acc, [s]: [] }), {});
+    leads.forEach(l => { if (grouped[l.status]) grouped[l.status].push(l); });
+    board.innerHTML = STAGES.map(stage => {
+      const m = STAGE_META[stage];
+      const cards = grouped[stage].map(buildCard).join('');
+      const count = grouped[stage].length;
+      return `
+        <div class="kanban-col flex flex-col gap-3">
+          <div class="flex items-center justify-between px-1">
+            <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${m.dot}"></span><h2 class="text-sm font-semibold ${m.color}">${stage}</h2></div>
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full ${m.bg} ${m.color}">${count}</span>
+          </div>
+          <div class="flex flex-col gap-3">${cards || `<p class="text-slate-600 text-xs text-center py-8">No leads here yet</p>`}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderProgressTable(leads) {
+    const tbody = document.getElementById('progress-table-body');
+    const empty = document.getElementById('progress-table-empty');
+    if (!leads || !leads.length) {
+      tbody.innerHTML = '';
+      empty.classList.remove('hidden');
+      return;
+    }
+    empty.classList.add('hidden');
+    tbody.innerHTML = leads.map((lead, i) => {
+      const badge = STATUS_BADGE[lead.status] || 'bg-slate-600 text-slate-300 border border-slate-500';
+      const rowBg = i % 2 === 0 ? 'bg-slate-800' : 'bg-slate-800/40';
+      return `<tr class="${rowBg} border-b border-slate-700/50"><td class="px-4 py-3 font-medium text-slate-100">${escHtml(lead.clientName)}</td><td class="px-4 py-3 text-slate-300">${escHtml(lead.projectType || '—')}</td><td class="px-4 py-3 text-slate-400"><a href="mailto:${escHtml(lead.email)}" class="hover:text-rose-400">${escHtml(lead.email)}</a></td><td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium border ${badge}">${escHtml(lead.status)}</span></td></tr>`;
+    }).join('');
+  }
+
+  async function handleAdvance(id) {
+    try {
+      const data = await advanceStatus(id);
+      if (data.error) { showToast(data.error, 'error'); return; }
+      showToast(data.lead ? `${data.lead.clientName} → ${data.lead.status}` : 'Status updated.');
+      await loadAndRender();
+    } catch (e) {
+      showToast('Failed to update lead.', 'error');
+    }
+  }
+
+  function renderSlidableAnalytics(leads) {
+    const countByStatus = (s) => (leads || []).filter(l => l.status === s).length;
+    const maxCount = Math.max(...STAGES.map(countByStatus), 1);
+
+    // Pane 0: Charts
+    const chartsContent = document.getElementById('chartsContent');
+    const chartsEmpty = document.getElementById('chartsEmpty');
+    if (!leads || !leads.length) {
+      chartsContent.innerHTML = '';
+      chartsEmpty.classList.remove('hidden');
+    } else {
+      chartsEmpty.classList.add('hidden');
+      chartsContent.innerHTML = '<h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3">Leads by status</h3>' +
+        STAGES.map(stage => {
+          const m = STAGE_META[stage];
+          const n = countByStatus(stage);
+          const pct = (n / maxCount) * 100;
+          return `<div class="analytics-bar"><span class="bar-label">${stage}</span><div class="bar-track"><div class="bar-fill ${m.dot}" style="width:${pct}%"></div></div><span class="bar-val">${n}</span></div>`;
+        }).join('') +
+        (() => {
+          const byType = {};
+          (leads || []).forEach(l => { const t = l.projectType || 'Other'; byType[t] = (byType[t] || 0) + 1; });
+          const types = Object.entries(byType).sort((a, b) => b[1] - a[1]).slice(0, 6);
+          const maxT = Math.max(...types.map(([, v]) => v), 1);
+          return '<h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mt-6 mb-3">By project type</h3>' +
+            types.map(([name, val]) => `<div class="analytics-bar"><span class="bar-label truncate max-w-[100px]" title="${escHtml(name)}">${escHtml(name)}</span><div class="bar-track"><div class="bar-fill bg-rose-500/80" style="width:${(val / maxT) * 100}%"></div></div><span class="bar-val">${val}</span></div>`).join('');
+        })();
+    }
+
+    // Pane 1: Analysis & stats
+    const statsContent = document.getElementById('statsContent');
+    const statsEmpty = document.getElementById('statsEmpty');
+    const companies = new Set((leads || []).map(l => l.clientName).filter(Boolean));
+    if (!leads || !leads.length) {
+      statsContent.innerHTML = '';
+      statsEmpty.classList.remove('hidden');
+    } else {
+      statsEmpty.classList.add('hidden');
+      statsContent.innerHTML = [
+        { val: leads.length, lbl: 'Total leads' },
+        { val: companies.size, lbl: 'Companies' },
+        { val: countByStatus('New Lead'), lbl: 'New Lead' },
+        { val: countByStatus('Case Study Sent'), lbl: 'Case Study Sent' },
+        { val: countByStatus('SOW Approved'), lbl: 'SOW Approved' },
+        { val: countByStatus('Invoiced'), lbl: 'Invoiced' }
+      ].map(s => `<div class="stat-tile"><div class="val">${s.val}</div><div class="lbl">${s.lbl}</div></div>`).join('');
+    }
+
+    // Pane 2: By company
+    const companyCardsContent = document.getElementById('companyCardsContent');
+    const companyEmpty = document.getElementById('companyEmpty');
+    if (!leads || !leads.length) {
+      companyCardsContent.innerHTML = '';
+      companyEmpty.classList.remove('hidden');
+    } else {
+      companyEmpty.classList.add('hidden');
+      const byCompany = {};
+      leads.forEach(l => {
+        const c = l.clientName || 'Unknown';
+        if (!byCompany[c]) byCompany[c] = [];
+        byCompany[c].push(l);
+      });
+      companyCardsContent.innerHTML = Object.entries(byCompany).map(([name, arr]) => {
+        const tags = arr.map(l => {
+          const m = STAGE_META[l.status] || {};
+          return `<span class="lead-tag ${m.bg || 'bg-slate-500/10'}">${escHtml(l.projectType || '—')} · ${l.status}</span>`;
+        }).join('');
+        return `<div class="company-card"><h3>${escHtml(name)}</h3><div class="text-xs text-slate-500 dark:text-slate-400 mb-2">${arr.length} lead(s)</div><div>${tags}</div></div>`;
+      }).join('');
+    }
+  }
+
+  async function loadAndRender() {
+    try {
+      const leads = await fetchLeads();
+      renderSummaryPills(leads);
+      renderBoard(leads);
+      renderProgressTable(leads);
+      renderSlidableAnalytics(leads);
+    } catch (e) {
+      showToast('Could not load leads from server.', 'error');
+    }
+  }
+
+  document.getElementById('csvFile').addEventListener('change', async function () {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const leads = parseCSV(e.target.result);
+        if (!leads.length) { showToast('CSV contained no valid rows.', 'error'); return; }
+        const result = await bulkUploadLeads(leads);
+        if (result.error) { showToast(result.error, 'error'); return; }
+        const count = result.created ? result.created.length : leads.length;
+        showToast(`${count} lead(s) uploaded successfully!`);
+        await loadAndRender();
+      } catch (err) {
+        showToast(err.message || 'Failed to parse CSV.', 'error');
+      }
+    };
+    reader.readAsText(file);
+    this.value = '';
+  });
+
+  const dropZone = document.getElementById('dropZone');
+  dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drop-active'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-active'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drop-active');
+    const file = e.dataTransfer.files[0];
+    if (file && file.name.endsWith('.csv')) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      document.getElementById('csvFile').files = dt.files;
+      document.getElementById('csvFile').dispatchEvent(new Event('change'));
+    } else {
+      showToast('Please drop a .csv file.', 'error');
+    }
+  });
+
+  document.querySelectorAll('.slidable-tab').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const tab = parseInt(this.getAttribute('data-tab'), 10);
+      document.querySelectorAll('.slidable-tab').forEach(b => {
+        b.classList.remove('bg-white', 'dark:bg-slate-700', 'text-slate-800', 'dark:text-slate-100', 'shadow-sm');
+        b.classList.add('text-slate-600', 'dark:text-slate-400');
+      });
+      this.classList.add('bg-white', 'dark:bg-slate-700', 'text-slate-800', 'dark:text-slate-100', 'shadow-sm');
+      this.classList.remove('text-slate-600', 'dark:text-slate-400');
+      document.querySelectorAll('.slidable-pane').forEach(p => {
+        p.classList.toggle('hidden', parseInt(p.getAttribute('data-pane'), 10) !== tab);
+      });
+    });
+  });
+
+  let _modalLeads = [];
+  let _modalFilters = new Set();
+  function openStatusModal() {
+    document.getElementById('statusModal').classList.remove('modal-close');
+    document.getElementById('statusModal').classList.add('modal-open');
+    document.body.style.overflow = 'hidden';
+    _modalLeads = [...(leadsData || [])];
+    _modalFilters.clear();
+    document.getElementById('statusSearch').value = '';
+    document.getElementById('statusModalCount').textContent = _modalLeads.length;
+    renderModalFilterChips();
+    renderModalTable(_modalLeads);
+    renderModalSummaryBar(_modalLeads);
+  }
+  function closeStatusModal() {
+    document.getElementById('statusModal').classList.remove('modal-open');
+    document.getElementById('statusModal').classList.add('modal-close');
+    document.body.style.overflow = '';
+  }
+  function handleOverlayClick(event) {
+    if (event.target.closest('#statusModalPanel')) return;
+    closeStatusModal();
+  }
+  function renderModalFilterChips() {
+    const container = document.getElementById('filterChips');
+    container.innerHTML = STAGES.map(s => {
+      const active = _modalFilters.has(s);
+      const st = STATUS_BADGE[s] || 'bg-slate-600 text-slate-300 border-slate-500';
+      const cls = active ? st + ' border' : 'bg-slate-700/50 text-slate-400 border-slate-600 hover:border-slate-400 border';
+      return `<button type="button" onclick="toggleModalFilter('${s}')" class="text-xs px-2 py-0.5 rounded-full border transition-colors ${cls}">${s}</button>`;
+    }).join('');
+  }
+  function toggleModalFilter(status) {
+    if (_modalFilters.has(status)) _modalFilters.delete(status);
+    else _modalFilters.add(status);
+    renderModalFilterChips();
+    filterModalTable();
+  }
+  function filterModalTable() {
+    const q = (document.getElementById('statusSearch').value || '').toLowerCase().trim();
+    const list = _modalLeads.filter(l => {
+      const matchFilter = _modalFilters.size === 0 || _modalFilters.has(l.status);
+      const matchSearch = !q || [l.clientName, l.projectType, l.email, l.status].some(v => (v || '').toLowerCase().includes(q));
+      return matchFilter && matchSearch;
+    });
+    renderModalTable(list);
+  }
+  function renderModalTable(leads) {
+    const tbody = document.getElementById('statusTableBody');
+    const empty = document.getElementById('statusEmpty');
+    if (!leads || !leads.length) {
+      tbody.innerHTML = '';
+      empty.classList.remove('hidden');
+      return;
+    }
+    empty.classList.add('hidden');
+    tbody.innerHTML = leads.map((l, i) => {
+      const badge = STATUS_BADGE[l.status] || 'bg-slate-600 text-slate-300 border-slate-500';
+      const rowBg = i % 2 === 0 ? 'bg-slate-800' : 'bg-slate-800/60';
+      return `<tr class="${rowBg} border-b border-slate-700/50"><td class="px-6 py-3.5 font-medium text-slate-100">${escHtml(l.clientName)}</td><td class="px-4 py-3.5 text-slate-300">${escHtml(l.projectType || '')}</td><td class="px-4 py-3.5"><a href="mailto:${escHtml(l.email)}" class="text-slate-400 hover:text-rose-400">${escHtml(l.email)}</a></td><td class="px-4 py-3.5"><span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium border ${badge}">${escHtml(l.status)}</span></td></tr>`;
+    }).join('');
+  }
+  function renderModalSummaryBar(leads) {
+    const bar = document.getElementById('statusSummaryBar');
+    bar.innerHTML = STAGES.map(s => {
+      const n = leads.filter(l => l.status === s).length;
+      const st = STATUS_BADGE[s] || 'bg-slate-600 text-slate-400 border-slate-500';
+      return `<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold border ${st}">${n} ${s}</span>`;
+    }).join('');
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeStatusModal(); });
+
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('scopesynth_theme', isDark ? 'dark' : 'light');
+  });
+
+  const drawerOverlay = document.getElementById('drawerOverlay');
+  const drawerOpen = document.getElementById('drawerOpen');
+  const drawerBackdrop = document.getElementById('drawerBackdrop');
+  function openDrawer() { drawerOverlay.classList.add('open'); drawerOverlay.setAttribute('aria-hidden', 'false'); }
+  function closeDrawer() { drawerOverlay.classList.remove('open'); drawerOverlay.setAttribute('aria-hidden', 'true'); }
+  drawerOpen.addEventListener('click', openDrawer);
+  drawerBackdrop.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
+
+  loadAndRender();
+  </script>
+</body>
+</html>
