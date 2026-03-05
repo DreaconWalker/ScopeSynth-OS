@@ -1,6 +1,10 @@
 # ScopeSynth OS — The Cyborg Agency Engine
 
+![ScopeSynth OS](assets/Scope%20Synth-Os.png)
+
 ScopeSynth OS kills the agency paperwork struggle. It's an end-to-end **cyborg engine** that uses secure **BYOK AI** for case studies and **deterministic AST math** to instantly compile nested features into trackable, perfectly priced SOWs and invoices.
+
+**Live demo:** [https://scopesynth-os.onrender.com](https://scopesynth-os.onrender.com) · **PDF walkthrough:** [View or download the demo PDF](assets/Scope%20Synth-Os-demo.pdf)
 
 ---
 
